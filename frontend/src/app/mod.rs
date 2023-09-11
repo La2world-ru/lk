@@ -94,16 +94,13 @@ impl Component for App {
 
         let r = html!{
             <>
-            <div class="hdr">
-            </div>
-
             <div class="sep_b">
             </div>
             <div class="dlg_a">
                 <div class="dlg_b">
                     <div class="dlg_hdr">
                         <div class="dlg_hdr_txt">
-                            { "Купить CRD" }
+                        <b>{ "Купить CRD"}</b> 
                         </div>
                     </div>
                     <div class="sep_sm"></div>
@@ -117,22 +114,23 @@ impl Component for App {
                     </div>
                     <div class="sep_sm"></div>
                     <div class="dlg_r_a">
-                        <div class="dlg_r_b">
+                        <div class="dlg_r_b2">
                             { "CRD:" }
                         </div>
                         <div class="dlg_r_c">
-                            <input placeholder="Количество CRD" type="number" id="crd" name="CRD" class="dlg_r_i" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
+                            <input placeholder="Количество CRD" id="crd" name="CRD" class="dlg_r_i2" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
                         </div>
                     </div>
                     <div class="sep_sm"></div>
                     <div class="dlg_r_a">
                         <div class="dlg_r_b_b">
-                            { "Payment Service:" }
+                            { "Способ оплаты" }
                         </div>
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentMethod::Enot}>{ "Enot" }</option>
-                                <option value="test" selected={self.payment_method == PaymentMethod::Test}>{ "Test" }</option>
+                                <option value="test" selected={self.payment_method == PaymentMethod::Test}>{ "Hot Skins" }</option>
+                                <option value="test2" selected={self.payment_method == PaymentMethod::Test}>{ "Prime Payments" }</option>
                             </select>
                         </div>
                     </div>
@@ -144,10 +142,10 @@ impl Component for App {
                         </button>
                     </div>
                     <div class="sep_sm"></div>
-                    <div class="dlg_f">
+                    <div class="dlg_f2">
                         {
                             if let Some(warn) = &self.warn_message {
-                                html!{<div class="dlg_f_t">{warn} </div>}
+                                html!{<div class="dlg_f2_t">{warn} </div>}
                             } else {
                                 html!{}
                             }
