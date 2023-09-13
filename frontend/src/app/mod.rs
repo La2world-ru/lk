@@ -138,7 +138,7 @@ impl Component for App {
                     <div class="sep_sm"></div>
                     <div class="sep_sm"></div>
                     <div class="dlg_f">
-                        <button class="clear-completed" onclick={ctx.link().callback(|_| PaymentMsg::TryPayment)}>
+                        <button class="fill" onclick={ctx.link().callback(|_| PaymentMsg::TryPayment)}>
                             { "Оплатить" }
                         </button>
                     </div>

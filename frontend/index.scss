@@ -48,7 +48,8 @@ body {
 }
 .dlg_b {
   border-radius: 6px;
-  box-sizing: border-box; border: 3px solid  var(--color-border);
+  box-sizing: border-box; border: 1px solid  var(--color-border);
+  box-shadow: 0px 7px 12px 0px rgba(0, 0, 0, 0.5); 
   position: relative; background-color: var(--color-page-bg); width: 500px; height: 305px; align-items: start;
 }
 .dlg_hdr {
@@ -95,7 +96,7 @@ body {
   padding: 0px 0px 0px 0px;
 }
 .dlg_f2_t {
-  font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 0px 77px 0px;
+  font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 15px 77px 0px;
 }
 
 body {
@@ -123,11 +124,6 @@ input:focus {
   color: var(--color-font);
 }
 
-option {
-  background: var(--color-secondary-bg);
-  outline: 0;
-}
-
 select {
   font-family: Roboto,Helvetica Neue,sans-serif;  border: 0;
   font-weight: 500;
@@ -142,11 +138,18 @@ select {
   border: 1px solid  var(--color-border)
 }
 
+select.option {
+  background: var(--color-secondary-bg);
+  border: 1px solid  var(--color-border);
+  border-radius: 4px;
+  outline: 0;
+}
+
 button {
-  cursor:pointer;
-  background-color: var(--color-main-bg);
-  border: 1px solid  var(--color-page-bg);
-  color: var(--color-h1-title-shadow);
+  cursor: pointer;
+  background-color: var(--color-secondary-bg);
+  border: 1px solid  var(--color-border);
+  color: var(--color-h1-title-text);
   padding: 5px 5px;
   text-align: center;
   text-decoration: none;
@@ -156,3 +159,5 @@ button {
   height: 35px;
   width:100px;
 }
+button:hover { background: #192b0d; } /* при наведении курсора мышки */
+button:active { background: #162222; } /* при нажатии */
