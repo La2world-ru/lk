@@ -4,9 +4,10 @@ html,
   --color-main-bg: #323b3b;
   --color-page-bg: #162222;
   --color-secondary-bg: #0E1818;
-  --color-font: whitesmoke;
+  --color-font: #adb7aa;
+  --color-fonth1: whitesmoke;
   --color-header-bg: #197d8a;
-  --color-warning: orangered;
+  --color-warning: red;
   --color-border: #2e3e23;
   --color-h1-title-text: #adb7aa;
   --color-h1-title-shadow: #4a8820;
@@ -57,7 +58,7 @@ body {
   border-top-right-radius: 6px;
   color: var(--color-h1-title-text);
   text-shadow: 2px 1px 5px var(--color-h1-title-shadow);
-  position: relative; width: 100%; background-color: var(--color-secondary-bg); height: 40px; color: var(--color-font); font-size: 25px; font-weight: 500; display: flex; align-content: center; justify-content: left; padding: 22px 0px 9px 0px; 
+  position: relative; width: 100%; background-color: var(--color-secondary-bg); height: 40px; color: var(--color-fonth1); font-size: 25px; font-weight: 500; display: flex; align-content: center; justify-content: left; padding: 22px 0px 9px 0px; 
 }
 .dlg_hdr_txt {
   padding-left: 3px;
@@ -66,13 +67,13 @@ body {
   position: relative; width: 100%; display: flex; align-content: center; justify-content: left
 }
 .dlg_r_b {
-  padding: 8px 0px 0px 15px; font-size: 17px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
+  padding: 8px 0px 0px 15px; font-size: 17px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
 }
 .dlg_r_b2 {
-  padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
+  padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
 }
 .dlg_r_b_b {
-  padding: 7px 0px 0px 0px; font-size: 16px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 150px;
+  padding: 7px 0px 0px 0px; font-size: 16px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 150px;
 }
 .dlg_r_slct {
   min-width: 15px;
@@ -161,3 +162,5 @@ button {
 }
 button:hover { background: #192b0d; } /* при наведении курсора мышки */
 button:active { background: #162222; } /* при нажатии */
+button:hover { color: var(--color-fonth1); } /* при наведении курсора мышки */
+button:active { color: var(--color-h1-title-text); } /* при нажатии */
