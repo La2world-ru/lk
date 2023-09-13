@@ -26,7 +26,14 @@ body {
   margin: 0;
   font-family: Roboto,Helvetica Neue,sans-serif;
 }
-
+.logo {
+  content: url("img/logo.png");
+  opacity: 0.9;
+  width: auto;
+  height: 85px;
+  margin-top: -29px;
+  margin-right: 0px;
+}
 .hdr {
   position: absolute; top: 0; margin-top: 0; background-color: var(--color-page-bg); width: 100%; padding-top: 0; height: 50px;
 }
@@ -52,7 +59,7 @@ body {
   position: relative; width: 100%; background-color: var(--color-secondary-bg); height: 40px; color: var(--color-font); font-size: 25px; font-weight: 500; display: flex; align-content: center; justify-content: left; padding: 22px 0px 9px 0px; 
 }
 .dlg_hdr_txt {
-  padding-left: 12px;
+  padding-left: 3px;
 }
 .dlg_r_a {
   position: relative; width: 100%; display: flex; align-content: center; justify-content: left

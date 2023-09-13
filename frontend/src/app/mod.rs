@@ -99,6 +99,7 @@ impl Component for App {
             <div class="dlg_a">
                 <div class="dlg_b">
                     <div class="dlg_hdr">
+                    <span class="logo pull-right"></span>
                         <div class="dlg_hdr_txt">
                         <b>{ "Купить CRD"}</b> 
                         </div>
@@ -129,8 +130,8 @@ impl Component for App {
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentMethod::Enot}>{ "Enot" }</option>
-                                <option value="test" selected={self.payment_method == PaymentMethod::Test}>{ "Hot Skins" }</option>
-                                <option value="test2" selected={self.payment_method == PaymentMethod::Test}>{ "Prime Payments" }</option>
+                                <option value="test" selected={self.payment_method == PaymentMethod::Test}>{ "Prime Payments" }</option>
+                                <option value="test2" selected={self.payment_method == PaymentMethod::Test}>{ "Hot Skins" }</option>
                             </select>
                         </div>
                     </div>
