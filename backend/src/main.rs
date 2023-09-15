@@ -1,12 +1,12 @@
 mod external_services;
 
-use axum::Router;
+use crate::external_services::enot::webhooks::invoice_webhook;
 use axum::routing::post;
+use axum::Router;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use surrealdb::engine::local::SpeeDb;
 use surrealdb::Surreal;
-use crate::external_services::enot::webhooks::invoice_webhook;
 
 lazy_static! {
     static ref CONFIG: MainConfig = envy::from_env::<MainConfig>().unwrap();
@@ -28,11 +28,7 @@ async fn main() {
     // Select a specific namespace / database
     db.use_ns("test").use_db("test").await.unwrap();
 
-    let app = Router::new()
-        .route(
-            "/webhook/enot/invoice",
-            post(invoice_webhook)
-        );
+    let app = Router::new().route("/webhook/enot/invoice", post(invoice_webhook));
 
     axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
         .serve(app.into_make_service())

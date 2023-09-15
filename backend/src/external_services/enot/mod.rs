@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 pub mod webhooks;
 
-use std::str::FromStr;
-use chrono::{DateTime, NaiveDateTime, Utc};
 use anyhow::Result;
 use axum::Json;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use std::str::FromStr;
 use thiserror::Error;
 
 use hmac::{Hmac, Mac};
@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
 
-use surrealdb::sql::Uuid;
 use crate::CONFIG;
+use surrealdb::sql::Uuid;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(non_camel_case_types)]
-enum PaymentCurrency{
+enum PaymentCurrency {
     RUB,
     USD,
     EUR,
@@ -99,9 +99,7 @@ enum PaymentMethod {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct CustomFields {
-
-}
+struct CustomFields {}
 
 #[skip_serializing_none]
 #[derive(Serialize)]
@@ -177,12 +175,12 @@ struct CreatePayment {
 
     /**
 
-     */
+    */
     include_service: Option<String>,
 
     /**
 
-     */
+    */
     exclude_service: Option<Vec<PaymentMethod>>,
 }
 
@@ -214,7 +212,6 @@ struct CreatePaymentResponse {
     expired: String,
 }
 
-
 #[derive(Deserialize, Debug)]
 enum PaymentProceededStatus {
     #[serde(rename = "success")]
@@ -226,7 +223,6 @@ enum PaymentProceededStatus {
     #[serde(rename = "refund")]
     Refund,
 }
-
 
 #[derive(Deserialize, Debug)]
 struct RawIncomingInvoice {
@@ -342,40 +338,31 @@ pub enum ProceedInvoiceError {
     InvalidSignature,
 
     #[error("Wrong status code: {code:?} for state {state:?}")]
-    WrongStatusCode{
-        code: i32,
-        state: String,
-    },
+    WrongStatusCode { code: i32, state: String },
 
     #[error("Missing field: {field:?} for state {state:?}")]
-    FieldMissing {
-        field: String,
-        state: String,
-    },
+    FieldMissing { field: String, state: String },
 
     #[error("Field {field:?} should have type {field_type:?}")]
-    WrongFieldType {
-        field: String,
-        field_type: String,
-    },
+    WrongFieldType { field: String, field_type: String },
 }
 
 impl RawIncomingInvoice {
-    fn from_data(body: Json<Value>, hash: &str) -> Result<Self>{
+    fn from_data(body: Json<Value>, hash: &str) -> Result<Self> {
         let raw_body = body.to_string();
 
         if Self::validate_signature(hash, &CONFIG.enot_secret, &*raw_body) {
             let s = serde_json::from_value(body.0).unwrap();
 
-            return Ok(s)
+            return Ok(s);
         }
 
         Err(ProceedInvoiceError::InvalidSignature.into())
     }
 
     fn validate_signature(provided_signature: &str, secret: &str, body: &str) -> bool {
-        let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
 
         mac.update(body.as_bytes());
 
@@ -390,16 +377,10 @@ impl RawIncomingInvoice {
 
     pub fn into_invoice_data(self) -> Result<IncomingInvoice> {
         return match self.call_type {
-            1 => {
-                self.handle_payment()
-            }
-            2 => {
-                self.handle_refund()
-            }
-            v => {
-                Err(ProceedInvoiceError::InvalidCallType(v).into())
-            }
-        }
+            1 => self.handle_payment(),
+            2 => self.handle_refund(),
+            v => Err(ProceedInvoiceError::InvalidCallType(v).into()),
+        };
     }
 
     fn handle_payment(self) -> Result<IncomingInvoice> {
@@ -408,85 +389,122 @@ impl RawIncomingInvoice {
                 let state = "success".to_string();
 
                 let Some(pay_service) = self.pay_service else {
-                    return Err(ProceedInvoiceError::FieldMissing { field: "pay_service".to_string(), state }.into())
+                    return Err(ProceedInvoiceError::FieldMissing {
+                        field: "pay_service".to_string(),
+                        state,
+                    }
+                    .into());
                 };
                 let Some(payer_details) = self.payer_details else {
-                    return Err(ProceedInvoiceError::FieldMissing { field: "payer_details".to_string(), state }.into())
+                    return Err(ProceedInvoiceError::FieldMissing {
+                        field: "payer_details".to_string(),
+                        state,
+                    }
+                    .into());
                 };
                 let Some(credited) = self.credited else {
-                    return Err(ProceedInvoiceError::FieldMissing { field: "credited".to_string(), state }.into())
+                    return Err(ProceedInvoiceError::FieldMissing {
+                        field: "credited".to_string(),
+                        state,
+                    }
+                    .into());
                 };
                 let Some(pay_time) = self.pay_time else {
-                    return Err(ProceedInvoiceError::FieldMissing { field: "pay_time".to_string(), state }.into())
+                    return Err(ProceedInvoiceError::FieldMissing {
+                        field: "pay_time".to_string(),
+                        state,
+                    }
+                    .into());
                 };
 
                 let Ok(credited) = f32::from_str(&*credited) else {
-                    return Err(ProceedInvoiceError::WrongFieldType { field: "credited".to_string(), field_type: "f32".to_string() }.into())
+                    return Err(ProceedInvoiceError::WrongFieldType {
+                        field: "credited".to_string(),
+                        field_type: "f32".to_string(),
+                    }
+                    .into());
                 };
                 let Ok(amount) = f32::from_str(&*self.amount) else {
-                    return Err(ProceedInvoiceError::WrongFieldType { field: "amount".to_string(), field_type: "f32".to_string() }.into())
+                    return Err(ProceedInvoiceError::WrongFieldType {
+                        field: "amount".to_string(),
+                        field_type: "f32".to_string(),
+                    }
+                    .into());
                 };
                 /*2023-03-21 14:00:12*/
-                let Ok(pay_time) = DateTime::parse_from_str(&format!("{pay_time} +0300"), "%Y-%m-%d %H:%M:%S %z") else {
-                    return Err(ProceedInvoiceError::WrongFieldType { field: "pay_time".to_string(), field_type: "%Y-%m-%d %H:%M".to_string() }.into())
+                let Ok(pay_time) =
+                    DateTime::parse_from_str(&format!("{pay_time} +0300"), "%Y-%m-%d %H:%M:%S %z")
+                else {
+                    return Err(ProceedInvoiceError::WrongFieldType {
+                        field: "pay_time".to_string(),
+                        field_type: "%Y-%m-%d %H:%M".to_string(),
+                    }
+                    .into());
                 };
 
-                Ok(IncomingInvoice::SucceedPayment(
-                    SucceedPayment{
-                        invoice_id: self.invoice_id,
-                        amount,
-                        currency: self.currency,
-                        order_id: self.order_id,
-                        pay_service,
-                        payer_details,
-                        custom_fields: self.custom_fields,
-                        credited,
-                        pay_time: pay_time.naive_utc(),
-                    }
-                ))
+                Ok(IncomingInvoice::SucceedPayment(SucceedPayment {
+                    invoice_id: self.invoice_id,
+                    amount,
+                    currency: self.currency,
+                    order_id: self.order_id,
+                    pay_service,
+                    payer_details,
+                    custom_fields: self.custom_fields,
+                    credited,
+                    pay_time: pay_time.naive_utc(),
+                }))
             }
 
             PaymentProceededStatus::Fail | PaymentProceededStatus::Expired => {
                 let state = "payment_rejected".to_string();
 
                 let Some(reject_time) = self.reject_time else {
-                    return Err(ProceedInvoiceError::FieldMissing { field: "reject_time".to_string(), state }.into())
+                    return Err(ProceedInvoiceError::FieldMissing {
+                        field: "reject_time".to_string(),
+                        state,
+                    }
+                    .into());
                 };
 
                 let Ok(amount) = f32::from_str(&*self.amount) else {
-                    return Err(ProceedInvoiceError::WrongFieldType { field: "amount".to_string(), field_type: "f32".to_string() }.into())
+                    return Err(ProceedInvoiceError::WrongFieldType {
+                        field: "amount".to_string(),
+                        field_type: "f32".to_string(),
+                    }
+                    .into());
                 };
                 /*2023-03-21 14:00:12*/
-                let Ok(reject_time) = DateTime::parse_from_str(&format!("{reject_time} +0300"), "%Y-%m-%d %H:%M:%S %z") else {
-                    return Err(ProceedInvoiceError::WrongFieldType { field: "pay_time".to_string(), field_type: "%Y-%m-%d %H:%M".to_string() }.into())
+                let Ok(reject_time) = DateTime::parse_from_str(
+                    &format!("{reject_time} +0300"),
+                    "%Y-%m-%d %H:%M:%S %z",
+                ) else {
+                    return Err(ProceedInvoiceError::WrongFieldType {
+                        field: "pay_time".to_string(),
+                        field_type: "%Y-%m-%d %H:%M".to_string(),
+                    }
+                    .into());
                 };
 
                 let close_status;
 
                 match self.code {
-                    31 => {close_status = CloseStatus::TimeEnded}
-                    32 => {close_status = CloseStatus::Error}
-                    v => {
-                        return Err(ProceedInvoiceError::WrongStatusCode { code: v, state }.into())
-                    }
+                    31 => close_status = CloseStatus::TimeEnded,
+                    32 => close_status = CloseStatus::Error,
+                    v => return Err(ProceedInvoiceError::WrongStatusCode { code: v, state }.into()),
                 }
 
-                Ok(IncomingInvoice::RejectedPayment(
-                    RejectedPayment{
-                        invoice_id: self.invoice_id,
-                        amount,
-                        currency: self.currency,
-                        order_id: self.order_id,
-                        custom_fields: self.custom_fields,
-                        close_status,
-                        reject_time: reject_time.naive_utc(),
-                    }
-                ))
+                Ok(IncomingInvoice::RejectedPayment(RejectedPayment {
+                    invoice_id: self.invoice_id,
+                    amount,
+                    currency: self.currency,
+                    order_id: self.order_id,
+                    custom_fields: self.custom_fields,
+                    close_status,
+                    reject_time: reject_time.naive_utc(),
+                }))
             }
 
-            PaymentProceededStatus::Refund => {
-                Err(ProceedInvoiceError::UnsupportedOperation.into())
-            }
+            PaymentProceededStatus::Refund => Err(ProceedInvoiceError::UnsupportedOperation.into()),
         }
     }
 
@@ -494,7 +512,6 @@ impl RawIncomingInvoice {
         Err(ProceedInvoiceError::UnsupportedOperation.into())
     }
 }
-
 
 #[derive(Debug)]
 enum IncomingInvoice {
@@ -561,12 +578,11 @@ enum CloseStatus {
     /**
     32 - Ошибочное закрытие инвойса
      */
-    Error
+    Error,
 }
 
 #[derive(Debug)]
 struct RejectedPayment {
-
     /**
     ID транзакции
      */
@@ -699,6 +715,9 @@ mod tests {
         let secret = "example";
         let sign = "e582b14dd13f8111711e3cb66a982fd7bff28a0ddece8bde14a34a5bb4449136";
 
-        assert_eq!(RawIncomingInvoice::validate_signature(sign, secret, body), true)
+        assert_eq!(
+            RawIncomingInvoice::validate_signature(sign, secret, body),
+            true
+        )
     }
 }
