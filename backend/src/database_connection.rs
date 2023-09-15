@@ -1,12 +1,12 @@
-use mongodb::{Client, Database};
+use anyhow::Result;
 use futures::TryStreamExt;
 use mongodb::options::ClientOptions;
-use sqlx::{Error, MySql, Pool};
+use mongodb::{Client, Database};
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions};
-use anyhow::Result;
+use sqlx::{Error, MySql, Pool};
 
-use crate::CONFIG;
 use crate::invoice_handler::Invoice;
+use crate::CONFIG;
 
 #[derive(Debug)]
 pub struct DatabaseConnection {
@@ -16,7 +16,7 @@ pub struct DatabaseConnection {
 
 impl DatabaseConnection {
     pub async fn get_char_id_by_name(&self, char_name: &str) -> Result<i32> {
-        let query:(i32, ) = sqlx::query_as("SELECT obj_id FROM characters WHERE char_name = ?")
+        let query: (i32,) = sqlx::query_as("SELECT obj_id FROM characters WHERE char_name = ?")
             .bind(char_name)
             .fetch_one(&self.l2_database)
             .await?;
@@ -24,7 +24,7 @@ impl DatabaseConnection {
         Ok(query.0)
     }
 
-    pub async fn get_all_invoices(&self,) -> Vec<Invoice> {
+    pub async fn get_all_invoices(&self) -> Vec<Invoice> {
         let collection = self.database.collection::<Invoice>("invoice");
         let res = collection.find(None, None).await.unwrap();
 
@@ -71,13 +71,12 @@ impl DatabaseConnection {
         let l2_database = MySqlPoolOptions::new()
             .max_connections(2)
             .connect_with(options)
-            .await.unwrap();
+            .await
+            .unwrap();
 
         Self {
-           database,
-           l2_database
+            database,
+            l2_database,
         }
     }
 }
-
-

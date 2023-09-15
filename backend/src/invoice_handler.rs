@@ -16,10 +16,7 @@ lazy_static! {
 #[async_trait]
 pub trait InvoiceOperations {
     fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder;
-    async fn proceed_create_invoice_response(
-        &self,
-        response: Response,
-    ) -> InvoiceData;
+    async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -55,9 +52,7 @@ impl InvoiceHandler {
 
                 match resp {
                     Ok(res) => {
-                        let invoice_data = self.enot
-                            .proceed_create_invoice_response(res)
-                            .await;
+                        let invoice_data = self.enot.proceed_create_invoice_response(res).await;
 
                         Invoice {
                             id: order_id,
@@ -66,7 +61,7 @@ impl InvoiceHandler {
                             client_ip,
                             service: PaymentServices::Enot,
                             amount,
-                            data: invoice_data
+                            data: invoice_data,
                         }
                     }
 
@@ -80,14 +75,12 @@ impl InvoiceHandler {
                         data: InvoiceData::FailedToCreate {
                             reason: format!("Can't connect to Enot servers: {err}"),
                         },
-                    }
+                    },
                 }
             }
         };
 
-        get_db()
-            .create_invoice(created_invoice.clone())
-            .await;
+        get_db().create_invoice(created_invoice.clone()).await;
 
         match created_invoice.data {
             InvoiceData::WaitingForPayment { payment_url, .. } => Ok(payment_url),

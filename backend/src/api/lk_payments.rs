@@ -1,8 +1,8 @@
+use crate::get_db;
 use crate::invoice_handler::{PaymentServices, INVOICE_HANDLER};
 use axum::Json;
 use axum_client_ip::SecureClientIp;
 use serde::Deserialize;
-use crate::get_db;
 
 #[derive(Deserialize)]
 pub struct CreateInvoice {
@@ -20,7 +20,13 @@ pub async fn create_invoice(
     };
 
     match INVOICE_HANDLER
-        .create_invoice(payload.amount, payload.char_name, char_id, payload.service, client_ip.0)
+        .create_invoice(
+            payload.amount,
+            payload.char_name,
+            char_id,
+            payload.service,
+            client_ip.0,
+        )
         .await
     {
         Ok(v) => v,
@@ -28,8 +34,7 @@ pub async fn create_invoice(
     }
 }
 
-pub async fn temp(
-) -> String {
+pub async fn temp() -> String {
     let r = get_db().get_all_invoices().await;
 
     format!("{r:#?}")

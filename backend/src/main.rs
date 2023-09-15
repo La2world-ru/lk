@@ -1,7 +1,7 @@
 mod api;
+mod database_connection;
 mod external_services;
 mod invoice_handler;
-mod database_connection;
 
 use axum::routing::{get, post};
 use axum::Router;

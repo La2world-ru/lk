@@ -707,7 +707,9 @@ pub(crate) mod handler {
     use crate::external_services::enot::{
         CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency,
     };
-    use crate::invoice_handler::{ InvoiceData, InvoiceOperations, PaymentServiceCreateInvoiceResponse };
+    use crate::invoice_handler::{
+        InvoiceData, InvoiceOperations, PaymentServiceCreateInvoiceResponse,
+    };
     use crate::CONFIG;
     use async_trait::async_trait;
     use reqwest::header::HeaderMap;
@@ -747,10 +749,7 @@ pub(crate) mod handler {
                 .body(serde_json::to_string(&params).unwrap())
         }
 
-        async fn proceed_create_invoice_response(
-            &self,
-            response: Response,
-        ) -> InvoiceData {
+        async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
             match response.status() {
                 StatusCode::OK => {
                     let body = response.json::<CreateInvoiceResponse>().await;
@@ -773,11 +772,13 @@ pub(crate) mod handler {
                 },
 
                 StatusCode::FORBIDDEN => InvoiceData::FailedToCreate {
-                    reason: "Ошибка доступа (Неверная сумма по сервису, неактивный магазин)".to_string(),
+                    reason: "Ошибка доступа (Неверная сумма по сервису, неактивный магазин)"
+                        .to_string(),
                 },
 
                 StatusCode::NOT_FOUND => InvoiceData::FailedToCreate {
-                    reason: "Объект не найден (Не найден тариф для вывода, или он выключен)".to_string(),
+                    reason: "Объект не найден (Не найден тариф для вывода, или он выключен)"
+                        .to_string(),
                 },
 
                 StatusCode::UNPROCESSABLE_ENTITY => InvoiceData::FailedToCreate {
