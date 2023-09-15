@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
-pub mod webhooks;
 
 use anyhow::Result;
 use axum::Json;
@@ -14,9 +13,9 @@ use sha2::Sha256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
+use uuid::Uuid;
 
 use crate::CONFIG;
-use surrealdb::sql::Uuid;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(non_camel_case_types)]
@@ -107,7 +106,7 @@ struct CustomFields {}
 /**
 https://docs.enot.io/create-invoice
  */
-struct CreatePayment {
+struct CreateInvoiceParams {
     /**
     Сумма к оплате. (Если в сумме есть копейки, то отправляйте их с разделителем "." Пример: 10.28
     number
@@ -175,22 +174,22 @@ struct CreatePayment {
     expire: Option<u32>,
 
     /**
-
-    */
-    include_service: Option<String>,
+    Методы оплаты доступные на странице счёта
+     */
+    include_service: Option<Vec<PaymentMethod>>,
 
     /**
-
-    */
+    Методы оплаты недоступные на странице счёта
+     */
     exclude_service: Option<Vec<PaymentMethod>>,
 }
 
-#[derive(Deserialize)]
-struct CreatePaymentResponse {
+#[derive(Deserialize, Debug)]
+pub struct CreateInvoiceResponse {
     /**
     ID операции в нашей системе
      */
-    id: Uuid,
+    id: String,
 
     /**
     Сумма инвойса (в рублях)
@@ -394,28 +393,28 @@ impl RawIncomingInvoice {
                         field: "pay_service".to_string(),
                         state,
                     }
-                    .into());
+                        .into());
                 };
                 let Some(payer_details) = self.payer_details else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "payer_details".to_string(),
                         state,
                     }
-                    .into());
+                        .into());
                 };
                 let Some(credited) = self.credited else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "credited".to_string(),
                         state,
                     }
-                    .into());
+                        .into());
                 };
                 let Some(pay_time) = self.pay_time else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "pay_time".to_string(),
                         state,
                     }
-                    .into());
+                        .into());
                 };
 
                 let Ok(credited) = f32::from_str(&credited) else {
@@ -423,25 +422,25 @@ impl RawIncomingInvoice {
                         field: "credited".to_string(),
                         field_type: "f32".to_string(),
                     }
-                    .into());
+                        .into());
                 };
                 let Ok(amount) = f32::from_str(&self.amount) else {
                     return Err(ProceedInvoiceError::WrongFieldType {
                         field: "amount".to_string(),
                         field_type: "f32".to_string(),
                     }
-                    .into());
+                        .into());
                 };
                 /*2023-03-21 14:00:12*/
                 let Ok(pay_time) =
                     DateTime::parse_from_str(&format!("{pay_time} +0300"), "%Y-%m-%d %H:%M:%S %z")
-                else {
-                    return Err(ProceedInvoiceError::WrongFieldType {
-                        field: "pay_time".to_string(),
-                        field_type: "%Y-%m-%d %H:%M".to_string(),
-                    }
-                    .into());
-                };
+                    else {
+                        return Err(ProceedInvoiceError::WrongFieldType {
+                            field: "pay_time".to_string(),
+                            field_type: "%Y-%m-%d %H:%M".to_string(),
+                        }
+                            .into());
+                    };
 
                 Ok(IncomingInvoice::SucceedPayment(SucceedPayment {
                     invoice_id: self.invoice_id,
@@ -464,7 +463,7 @@ impl RawIncomingInvoice {
                         field: "reject_time".to_string(),
                         state,
                     }
-                    .into());
+                        .into());
                 };
 
                 let Ok(amount) = f32::from_str(&self.amount) else {
@@ -472,7 +471,7 @@ impl RawIncomingInvoice {
                         field: "amount".to_string(),
                         field_type: "f32".to_string(),
                     }
-                    .into());
+                        .into());
                 };
                 /*2023-03-21 14:00:12*/
                 let Ok(reject_time) = DateTime::parse_from_str(
@@ -483,7 +482,7 @@ impl RawIncomingInvoice {
                         field: "pay_time".to_string(),
                         field_type: "%Y-%m-%d %H:%M".to_string(),
                     }
-                    .into());
+                        .into());
                 };
 
                 let close_status = match self.code {
@@ -703,6 +702,153 @@ struct RejectedRefund {
      */
     custom_fields: Option<CustomFields>,
 }
+
+pub(crate) mod handler {
+    use std::net::IpAddr;
+    use async_trait::async_trait;
+    use reqwest::header::HeaderMap;
+    use reqwest::{RequestBuilder, Response, StatusCode};
+    use uuid::Uuid;
+    use crate::CONFIG;
+    use crate::external_services::enot::{CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency};
+    use crate::invoice_handler::{CreatedInvoice, InvoiceOperations, PaymentServiceCreateInvoiceResponse, PaymentServices};
+
+    pub struct EnotInvoiceHandler {}
+
+    #[async_trait]
+    impl InvoiceOperations for EnotInvoiceHandler {
+        fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder {
+            let params = CreateInvoiceParams {
+                amount,
+                order_id,
+                currency: Some(PaymentCurrency::RUB),
+                shop_id: CONFIG.enot_shop_id,
+                hook_url: None,
+                custom_fields: None,
+                comment: None,
+                fail_url: None,
+                success_url: None,
+                expire: None,
+                include_service: None,
+                exclude_service: None,
+            };
+
+            let client = reqwest::Client::new();
+
+            let mut headers = HeaderMap::new();
+            headers.insert("Accept", "application/json".parse().unwrap());
+            headers.insert("Content-Type", "application/json".parse().unwrap());
+            headers.insert("x-api-key", CONFIG.enot_secret.parse().unwrap());
+
+            client
+                .post(&CONFIG.enot_api_url)
+                .headers(headers)
+                .body(serde_json::to_string(&params).unwrap())
+        }
+
+        async fn proceed_create_invoice_response(&self, response: Response, order_id: Uuid, amount: f32, client_ip: IpAddr) -> CreatedInvoice {
+            match response.status() {
+                StatusCode::OK => {
+                    let body = response.json::<CreateInvoiceResponse>().await;
+
+                    match body {
+                        Ok(body) => {
+                            CreatedInvoice::Succeed {
+                                id: order_id,
+                                external_id: body.id.clone(),
+                                payment_url: body.url.clone(),
+                                response: PaymentServiceCreateInvoiceResponse::Enot(body),
+                                client_ip,
+                                service: PaymentServices::Enot,
+                                amount,
+                            }
+                        }
+
+                        Err(err) => {
+                            CreatedInvoice::Failed {
+                                id: order_id,
+                                reason: format!("Can't deserialize response: {err}"),
+                                client_ip,
+                                service: PaymentServices::Enot,
+                                amount
+                            }
+                        }
+                    }
+                }
+
+                StatusCode::UNAUTHORIZED => CreatedInvoice::Failed {
+                    id: order_id,
+                    reason: format!("Ошибка авторизации (неверный shop_id или секретный ключ)"),
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount
+                },
+
+                StatusCode::FORBIDDEN => CreatedInvoice::Failed {
+                    id: order_id,
+                    reason: format!("Ошибка доступа (Неверная сумма по сервису, неактивный магазин)"),
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount
+                },
+
+                StatusCode::NOT_FOUND => CreatedInvoice::Failed {
+                    id: order_id,
+                    reason: format!("Объект не найден (Не найден тариф для вывода, или он выключен)"),
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount
+                },
+
+                StatusCode::UNPROCESSABLE_ENTITY => CreatedInvoice::Failed {
+                    id: order_id,
+                    reason: format!("Ошибка валидации"),
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount
+                },
+
+                StatusCode::INTERNAL_SERVER_ERROR => CreatedInvoice::Failed {
+                    id: order_id,
+                    reason: format!("Внутренняя ошибка системы"),
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount
+                },
+
+                code => CreatedInvoice::Failed {
+                    id: order_id,
+                    reason: format!("Unsupported response code: {code}"),
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount
+                }
+            }
+        }
+    }
+}
+
+pub(crate) mod webhooks {
+    use axum::http::HeaderMap;
+    use axum::Json;
+    use serde_json::Value;
+    use crate::external_services::enot::RawIncomingInvoice;
+
+    pub async fn invoice_webhook(headers: HeaderMap, body: Json<Value>) {
+        let Some(hash) = headers.get("x-api-sha256-signature") else {
+            return;
+        };
+
+        let Ok(raw_invoice) = RawIncomingInvoice::from_data(body, hash.to_str().unwrap()) else {
+            return;
+        };
+
+        let invoice = raw_invoice.into_invoice_data();
+
+        println!("{invoice:#?}");
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
