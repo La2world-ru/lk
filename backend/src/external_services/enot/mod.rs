@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-#![alloe(clippy::upper_case_acronyms)]
+#![allow(clippy::upper_case_acronyms)]
 pub mod webhooks;
 
 use anyhow::Result;
