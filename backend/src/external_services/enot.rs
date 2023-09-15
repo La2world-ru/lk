@@ -784,7 +784,7 @@ pub(crate) mod handler {
 
                 StatusCode::UNAUTHORIZED => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!("Ошибка авторизации (неверный shop_id или секретный ключ)"),
+                    reason: "Ошибка авторизации (неверный shop_id или секретный ключ)".to_string(),
                     client_ip,
                     service: PaymentServices::Enot,
                     amount,
@@ -792,9 +792,7 @@ pub(crate) mod handler {
 
                 StatusCode::FORBIDDEN => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!(
-                        "Ошибка доступа (Неверная сумма по сервису, неактивный магазин)"
-                    ),
+                    reason: "Ошибка доступа (Неверная сумма по сервису, неактивный магазин)".to_string(),
                     client_ip,
                     service: PaymentServices::Enot,
                     amount,
@@ -802,9 +800,7 @@ pub(crate) mod handler {
 
                 StatusCode::NOT_FOUND => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!(
-                        "Объект не найден (Не найден тариф для вывода, или он выключен)"
-                    ),
+                    reason: "Объект не найден (Не найден тариф для вывода, или он выключен)".to_string(),
                     client_ip,
                     service: PaymentServices::Enot,
                     amount,
@@ -812,7 +808,7 @@ pub(crate) mod handler {
 
                 StatusCode::UNPROCESSABLE_ENTITY => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!("Ошибка валидации"),
+                    reason: "Ошибка валидации".to_string(),
                     client_ip,
                     service: PaymentServices::Enot,
                     amount,
@@ -820,7 +816,7 @@ pub(crate) mod handler {
 
                 StatusCode::INTERNAL_SERVER_ERROR => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!("Внутренняя ошибка системы"),
+                    reason: "Внутренняя ошибка системы".to_string(),
                     client_ip,
                     service: PaymentServices::Enot,
                     amount,
