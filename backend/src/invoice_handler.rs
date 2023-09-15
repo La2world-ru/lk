@@ -1,12 +1,12 @@
-use std::net::IpAddr;
 use async_trait::async_trait;
 use lazy_static::lazy_static;
-use uuid::Uuid;
 use reqwest::{RequestBuilder, Response};
 use serde::Deserialize;
+use std::net::IpAddr;
+use uuid::Uuid;
 
-use crate::external_services::enot::handler::EnotInvoiceHandler;
 use crate::external_services::enot;
+use crate::external_services::enot::handler::EnotInvoiceHandler;
 
 lazy_static! {
     pub static ref INVOICE_HANDLER: InvoiceHandler = InvoiceHandler::new();
@@ -15,25 +15,36 @@ lazy_static! {
 #[async_trait]
 pub trait InvoiceOperations {
     fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder;
-    async fn proceed_create_invoice_response(&self, response: Response, order_id: Uuid, amount: f32, client_ip: IpAddr) -> CreatedInvoice;
+    async fn proceed_create_invoice_response(
+        &self,
+        response: Response,
+        order_id: Uuid,
+        amount: f32,
+        client_ip: IpAddr,
+    ) -> CreatedInvoice;
 }
 
 #[derive(Deserialize, Debug)]
 pub enum PaymentServices {
-    Enot
+    Enot,
 }
 
 pub struct InvoiceHandler {
-    enot: EnotInvoiceHandler
+    enot: EnotInvoiceHandler,
 }
 
 impl InvoiceHandler {
     pub fn new() -> Self {
-        Self{
-            enot: EnotInvoiceHandler {}
+        Self {
+            enot: EnotInvoiceHandler {},
         }
     }
-    pub async fn create_invoice(&self, amount: f32, service: PaymentServices, client_ip: IpAddr) -> Result<String, ()> {
+    pub async fn create_invoice(
+        &self,
+        amount: f32,
+        service: PaymentServices,
+        client_ip: IpAddr,
+    ) -> Result<String, ()> {
         let order_id = Uuid::new_v4();
 
         match service {
@@ -44,29 +55,25 @@ impl InvoiceHandler {
 
                 let created_invoice = match resp {
                     Ok(res) => {
-                        self.enot.proceed_create_invoice_response(res, order_id, amount, client_ip).await
+                        self.enot
+                            .proceed_create_invoice_response(res, order_id, amount, client_ip)
+                            .await
                     }
 
-                    Err(err) => {
-                        CreatedInvoice::Failed {
-                            id: order_id,
-                            reason: format!("Can't connect to Enot servers: {err}"),
-                            client_ip,
-                            service: PaymentServices::Enot,
-                            amount
-                        }
-                    }
+                    Err(err) => CreatedInvoice::Failed {
+                        id: order_id,
+                        reason: format!("Can't connect to Enot servers: {err}"),
+                        client_ip,
+                        service: PaymentServices::Enot,
+                        amount,
+                    },
                 };
 
                 println!("{created_invoice:#?}");
 
                 match created_invoice {
-                    CreatedInvoice::Succeed { payment_url, .. } => {
-                        Ok(payment_url)
-                    }
-                    CreatedInvoice::Failed { .. } => {
-                        Err(())
-                    }
+                    CreatedInvoice::Succeed { payment_url, .. } => Ok(payment_url),
+                    CreatedInvoice::Failed { .. } => Err(()),
                 }
             }
         }
@@ -74,8 +81,8 @@ impl InvoiceHandler {
 }
 
 #[derive(Debug)]
-pub enum PaymentServiceCreateInvoiceResponse{
-    Enot(enot::CreateInvoiceResponse)
+pub enum PaymentServiceCreateInvoiceResponse {
+    Enot(enot::CreateInvoiceResponse),
 }
 
 #[derive(Debug)]
@@ -95,5 +102,5 @@ pub enum CreatedInvoice {
         client_ip: IpAddr,
         service: PaymentServices,
         amount: f32,
-    }
+    },
 }

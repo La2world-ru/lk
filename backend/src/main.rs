@@ -1,13 +1,13 @@
+mod api;
 mod external_services;
 mod invoice_handler;
-mod api;
 
-use std::net::SocketAddr;
 use axum::routing::post;
 use axum::Router;
 use axum_client_ip::SecureClientIpSource;
 use lazy_static::lazy_static;
 use serde::Deserialize;
+use std::net::SocketAddr;
 use surrealdb::engine::local::SpeeDb;
 use surrealdb::Surreal;
 use tokio::sync::OnceCell;
@@ -23,7 +23,6 @@ lazy_static! {
 }
 
 static DB: OnceCell<Surreal<SurrealDbType>> = OnceCell::const_new();
-
 
 #[derive(Deserialize, Debug)]
 struct MainConfig {
@@ -52,8 +51,7 @@ async fn main() {
     let app = Router::new()
         .route("/webhook/enot/invoice", post(invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
-        .layer(SecureClientIpSource::ConnectInfo.into_extension())
-        ;
+        .layer(SecureClientIpSource::ConnectInfo.into_extension());
 
     axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())

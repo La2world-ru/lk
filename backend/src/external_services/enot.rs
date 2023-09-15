@@ -393,28 +393,28 @@ impl RawIncomingInvoice {
                         field: "pay_service".to_string(),
                         state,
                     }
-                        .into());
+                    .into());
                 };
                 let Some(payer_details) = self.payer_details else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "payer_details".to_string(),
                         state,
                     }
-                        .into());
+                    .into());
                 };
                 let Some(credited) = self.credited else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "credited".to_string(),
                         state,
                     }
-                        .into());
+                    .into());
                 };
                 let Some(pay_time) = self.pay_time else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "pay_time".to_string(),
                         state,
                     }
-                        .into());
+                    .into());
                 };
 
                 let Ok(credited) = f32::from_str(&credited) else {
@@ -422,25 +422,25 @@ impl RawIncomingInvoice {
                         field: "credited".to_string(),
                         field_type: "f32".to_string(),
                     }
-                        .into());
+                    .into());
                 };
                 let Ok(amount) = f32::from_str(&self.amount) else {
                     return Err(ProceedInvoiceError::WrongFieldType {
                         field: "amount".to_string(),
                         field_type: "f32".to_string(),
                     }
-                        .into());
+                    .into());
                 };
                 /*2023-03-21 14:00:12*/
                 let Ok(pay_time) =
                     DateTime::parse_from_str(&format!("{pay_time} +0300"), "%Y-%m-%d %H:%M:%S %z")
-                    else {
-                        return Err(ProceedInvoiceError::WrongFieldType {
-                            field: "pay_time".to_string(),
-                            field_type: "%Y-%m-%d %H:%M".to_string(),
-                        }
-                            .into());
-                    };
+                else {
+                    return Err(ProceedInvoiceError::WrongFieldType {
+                        field: "pay_time".to_string(),
+                        field_type: "%Y-%m-%d %H:%M".to_string(),
+                    }
+                    .into());
+                };
 
                 Ok(IncomingInvoice::SucceedPayment(SucceedPayment {
                     invoice_id: self.invoice_id,
@@ -463,7 +463,7 @@ impl RawIncomingInvoice {
                         field: "reject_time".to_string(),
                         state,
                     }
-                        .into());
+                    .into());
                 };
 
                 let Ok(amount) = f32::from_str(&self.amount) else {
@@ -471,7 +471,7 @@ impl RawIncomingInvoice {
                         field: "amount".to_string(),
                         field_type: "f32".to_string(),
                     }
-                        .into());
+                    .into());
                 };
                 /*2023-03-21 14:00:12*/
                 let Ok(reject_time) = DateTime::parse_from_str(
@@ -482,7 +482,7 @@ impl RawIncomingInvoice {
                         field: "pay_time".to_string(),
                         field_type: "%Y-%m-%d %H:%M".to_string(),
                     }
-                        .into());
+                    .into());
                 };
 
                 let close_status = match self.code {
@@ -704,14 +704,18 @@ struct RejectedRefund {
 }
 
 pub(crate) mod handler {
-    use std::net::IpAddr;
+    use crate::external_services::enot::{
+        CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency,
+    };
+    use crate::invoice_handler::{
+        CreatedInvoice, InvoiceOperations, PaymentServiceCreateInvoiceResponse, PaymentServices,
+    };
+    use crate::CONFIG;
     use async_trait::async_trait;
     use reqwest::header::HeaderMap;
     use reqwest::{RequestBuilder, Response, StatusCode};
+    use std::net::IpAddr;
     use uuid::Uuid;
-    use crate::CONFIG;
-    use crate::external_services::enot::{CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency};
-    use crate::invoice_handler::{CreatedInvoice, InvoiceOperations, PaymentServiceCreateInvoiceResponse, PaymentServices};
 
     pub struct EnotInvoiceHandler {}
 
@@ -746,33 +750,35 @@ pub(crate) mod handler {
                 .body(serde_json::to_string(&params).unwrap())
         }
 
-        async fn proceed_create_invoice_response(&self, response: Response, order_id: Uuid, amount: f32, client_ip: IpAddr) -> CreatedInvoice {
+        async fn proceed_create_invoice_response(
+            &self,
+            response: Response,
+            order_id: Uuid,
+            amount: f32,
+            client_ip: IpAddr,
+        ) -> CreatedInvoice {
             match response.status() {
                 StatusCode::OK => {
                     let body = response.json::<CreateInvoiceResponse>().await;
 
                     match body {
-                        Ok(body) => {
-                            CreatedInvoice::Succeed {
-                                id: order_id,
-                                external_id: body.id.clone(),
-                                payment_url: body.url.clone(),
-                                response: PaymentServiceCreateInvoiceResponse::Enot(body),
-                                client_ip,
-                                service: PaymentServices::Enot,
-                                amount,
-                            }
-                        }
+                        Ok(body) => CreatedInvoice::Succeed {
+                            id: order_id,
+                            external_id: body.id.clone(),
+                            payment_url: body.url.clone(),
+                            response: PaymentServiceCreateInvoiceResponse::Enot(body),
+                            client_ip,
+                            service: PaymentServices::Enot,
+                            amount,
+                        },
 
-                        Err(err) => {
-                            CreatedInvoice::Failed {
-                                id: order_id,
-                                reason: format!("Can't deserialize response: {err}"),
-                                client_ip,
-                                service: PaymentServices::Enot,
-                                amount
-                            }
-                        }
+                        Err(err) => CreatedInvoice::Failed {
+                            id: order_id,
+                            reason: format!("Can't deserialize response: {err}"),
+                            client_ip,
+                            service: PaymentServices::Enot,
+                            amount,
+                        },
                     }
                 }
 
@@ -781,23 +787,27 @@ pub(crate) mod handler {
                     reason: format!("Ошибка авторизации (неверный shop_id или секретный ключ)"),
                     client_ip,
                     service: PaymentServices::Enot,
-                    amount
+                    amount,
                 },
 
                 StatusCode::FORBIDDEN => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!("Ошибка доступа (Неверная сумма по сервису, неактивный магазин)"),
+                    reason: format!(
+                        "Ошибка доступа (Неверная сумма по сервису, неактивный магазин)"
+                    ),
                     client_ip,
                     service: PaymentServices::Enot,
-                    amount
+                    amount,
                 },
 
                 StatusCode::NOT_FOUND => CreatedInvoice::Failed {
                     id: order_id,
-                    reason: format!("Объект не найден (Не найден тариф для вывода, или он выключен)"),
+                    reason: format!(
+                        "Объект не найден (Не найден тариф для вывода, или он выключен)"
+                    ),
                     client_ip,
                     service: PaymentServices::Enot,
-                    amount
+                    amount,
                 },
 
                 StatusCode::UNPROCESSABLE_ENTITY => CreatedInvoice::Failed {
@@ -805,7 +815,7 @@ pub(crate) mod handler {
                     reason: format!("Ошибка валидации"),
                     client_ip,
                     service: PaymentServices::Enot,
-                    amount
+                    amount,
                 },
 
                 StatusCode::INTERNAL_SERVER_ERROR => CreatedInvoice::Failed {
@@ -813,7 +823,7 @@ pub(crate) mod handler {
                     reason: format!("Внутренняя ошибка системы"),
                     client_ip,
                     service: PaymentServices::Enot,
-                    amount
+                    amount,
                 },
 
                 code => CreatedInvoice::Failed {
@@ -821,18 +831,18 @@ pub(crate) mod handler {
                     reason: format!("Unsupported response code: {code}"),
                     client_ip,
                     service: PaymentServices::Enot,
-                    amount
-                }
+                    amount,
+                },
             }
         }
     }
 }
 
 pub(crate) mod webhooks {
+    use crate::external_services::enot::RawIncomingInvoice;
     use axum::http::HeaderMap;
     use axum::Json;
     use serde_json::Value;
-    use crate::external_services::enot::RawIncomingInvoice;
 
     pub async fn invoice_webhook(headers: HeaderMap, body: Json<Value>) {
         let Some(hash) = headers.get("x-api-sha256-signature") else {
@@ -849,7 +859,6 @@ pub(crate) mod webhooks {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::external_services::enot::RawIncomingInvoice;
@@ -860,8 +869,6 @@ mod tests {
         let secret = "example";
         let sign = "e582b14dd13f8111711e3cb66a982fd7bff28a0ddece8bde14a34a5bb4449136";
 
-        assert!(
-            RawIncomingInvoice::validate_signature(sign, secret, body)
-        )
+        assert!(RawIncomingInvoice::validate_signature(sign, secret, body))
     }
 }
