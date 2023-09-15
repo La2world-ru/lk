@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 use crate::CONFIG;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[allow(non_camel_case_types)]
 enum PaymentCurrency {
     RUB,
@@ -184,7 +184,7 @@ struct CreateInvoiceParams {
     exclude_service: Option<Vec<PaymentMethod>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateInvoiceResponse {
     /**
     ID операции в нашей системе
@@ -707,14 +707,11 @@ pub(crate) mod handler {
     use crate::external_services::enot::{
         CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency,
     };
-    use crate::invoice_handler::{
-        CreatedInvoice, InvoiceOperations, PaymentServiceCreateInvoiceResponse, PaymentServices,
-    };
+    use crate::invoice_handler::{ InvoiceData, InvoiceOperations, PaymentServiceCreateInvoiceResponse };
     use crate::CONFIG;
     use async_trait::async_trait;
     use reqwest::header::HeaderMap;
     use reqwest::{RequestBuilder, Response, StatusCode};
-    use std::net::IpAddr;
     use uuid::Uuid;
 
     pub struct EnotInvoiceHandler {}
@@ -753,81 +750,46 @@ pub(crate) mod handler {
         async fn proceed_create_invoice_response(
             &self,
             response: Response,
-            order_id: Uuid,
-            amount: f32,
-            client_ip: IpAddr,
-        ) -> CreatedInvoice {
+        ) -> InvoiceData {
             match response.status() {
                 StatusCode::OK => {
                     let body = response.json::<CreateInvoiceResponse>().await;
 
                     match body {
-                        Ok(body) => CreatedInvoice::Succeed {
-                            id: order_id,
+                        Ok(body) => InvoiceData::WaitingForPayment {
                             external_id: body.id.clone(),
                             payment_url: body.url.clone(),
                             response: PaymentServiceCreateInvoiceResponse::Enot(body),
-                            client_ip,
-                            service: PaymentServices::Enot,
-                            amount,
                         },
 
-                        Err(err) => CreatedInvoice::Failed {
-                            id: order_id,
+                        Err(err) => InvoiceData::FailedToCreate {
                             reason: format!("Can't deserialize response: {err}"),
-                            client_ip,
-                            service: PaymentServices::Enot,
-                            amount,
                         },
                     }
                 }
 
-                StatusCode::UNAUTHORIZED => CreatedInvoice::Failed {
-                    id: order_id,
+                StatusCode::UNAUTHORIZED => InvoiceData::FailedToCreate {
                     reason: "Ошибка авторизации (неверный shop_id или секретный ключ)".to_string(),
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
                 },
 
-                StatusCode::FORBIDDEN => CreatedInvoice::Failed {
-                    id: order_id,
+                StatusCode::FORBIDDEN => InvoiceData::FailedToCreate {
                     reason: "Ошибка доступа (Неверная сумма по сервису, неактивный магазин)".to_string(),
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
                 },
 
-                StatusCode::NOT_FOUND => CreatedInvoice::Failed {
-                    id: order_id,
+                StatusCode::NOT_FOUND => InvoiceData::FailedToCreate {
                     reason: "Объект не найден (Не найден тариф для вывода, или он выключен)".to_string(),
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
                 },
 
-                StatusCode::UNPROCESSABLE_ENTITY => CreatedInvoice::Failed {
-                    id: order_id,
+                StatusCode::UNPROCESSABLE_ENTITY => InvoiceData::FailedToCreate {
                     reason: "Ошибка валидации".to_string(),
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
                 },
 
-                StatusCode::INTERNAL_SERVER_ERROR => CreatedInvoice::Failed {
-                    id: order_id,
+                StatusCode::INTERNAL_SERVER_ERROR => InvoiceData::FailedToCreate {
                     reason: "Внутренняя ошибка системы".to_string(),
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
                 },
 
-                code => CreatedInvoice::Failed {
-                    id: order_id,
+                code => InvoiceData::FailedToCreate {
                     reason: format!("Unsupported response code: {code}"),
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
                 },
             }
         }
