@@ -351,7 +351,7 @@ impl RawIncomingInvoice {
     fn from_data(body: Json<Value>, hash: &str) -> Result<Self> {
         let raw_body = body.to_string();
 
-        if Self::validate_signature(hash, &CONFIG.enot_secret, &*raw_body) {
+        if Self::validate_signature(hash, &CONFIG.enot_secret, &raw_body) {
             let s = serde_json::from_value(body.0).unwrap();
 
             return Ok(s);
@@ -376,11 +376,11 @@ impl RawIncomingInvoice {
     }
 
     pub fn into_invoice_data(self) -> Result<IncomingInvoice> {
-        return match self.call_type {
+        match self.call_type {
             1 => self.handle_payment(),
             2 => self.handle_refund(),
             v => Err(ProceedInvoiceError::InvalidCallType(v).into()),
-        };
+        }
     }
 
     fn handle_payment(self) -> Result<IncomingInvoice> {
@@ -417,14 +417,14 @@ impl RawIncomingInvoice {
                     .into());
                 };
 
-                let Ok(credited) = f32::from_str(&*credited) else {
+                let Ok(credited) = f32::from_str(&credited) else {
                     return Err(ProceedInvoiceError::WrongFieldType {
                         field: "credited".to_string(),
                         field_type: "f32".to_string(),
                     }
                     .into());
                 };
-                let Ok(amount) = f32::from_str(&*self.amount) else {
+                let Ok(amount) = f32::from_str(&self.amount) else {
                     return Err(ProceedInvoiceError::WrongFieldType {
                         field: "amount".to_string(),
                         field_type: "f32".to_string(),
@@ -466,7 +466,7 @@ impl RawIncomingInvoice {
                     .into());
                 };
 
-                let Ok(amount) = f32::from_str(&*self.amount) else {
+                let Ok(amount) = f32::from_str(&self.amount) else {
                     return Err(ProceedInvoiceError::WrongFieldType {
                         field: "amount".to_string(),
                         field_type: "f32".to_string(),
@@ -715,9 +715,8 @@ mod tests {
         let secret = "example";
         let sign = "e582b14dd13f8111711e3cb66a982fd7bff28a0ddece8bde14a34a5bb4449136";
 
-        assert_eq!(
-            RawIncomingInvoice::validate_signature(sign, secret, body),
-            true
+        assert!(
+            RawIncomingInvoice::validate_signature(sign, secret, body)
         )
     }
 }
