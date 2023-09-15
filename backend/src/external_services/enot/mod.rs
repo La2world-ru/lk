@@ -486,13 +486,11 @@ impl RawIncomingInvoice {
                     .into());
                 };
 
-                let close_status;
-
-                match self.code {
-                    31 => close_status = CloseStatus::TimeEnded,
-                    32 => close_status = CloseStatus::Error,
+                let close_status = match self.code {
+                    31 => CloseStatus::TimeEnded,
+                    32 => CloseStatus::Error,
                     v => return Err(ProceedInvoiceError::WrongStatusCode { code: v, state }.into()),
-                }
+                };
 
                 Ok(IncomingInvoice::RejectedPayment(RejectedPayment {
                     invoice_id: self.invoice_id,
