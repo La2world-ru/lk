@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use reqwest::{RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::external_services::enot;
@@ -61,6 +62,8 @@ impl InvoiceHandler {
                             client_ip,
                             service: PaymentServices::Enot,
                             amount,
+                            created_at: DateTime::from(std::time::SystemTime::now()),
+                            updated_at: DateTime::from(std::time::SystemTime::now()),
                             data: invoice_data,
                         }
                     }
@@ -72,6 +75,8 @@ impl InvoiceHandler {
                         client_ip,
                         service: PaymentServices::Enot,
                         amount,
+                        created_at: DateTime::from(std::time::SystemTime::now()),
+                        updated_at: DateTime::from(std::time::SystemTime::now()),
                         data: InvoiceData::FailedToCreate {
                             reason: format!("Can't connect to Enot servers: {err}"),
                         },
@@ -101,6 +106,8 @@ pub struct Invoice {
     char_name: String,
     char_id: i32,
     data: InvoiceData,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
     client_ip: IpAddr,
     service: PaymentServices,
     amount: f32,

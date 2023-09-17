@@ -28,6 +28,8 @@ struct MainConfig {
     db_path: String,
     #[serde(rename = "l2w_backend_l2_db_path")]
     l2_db_path: String,
+    #[serde(rename = "l2w_backend_enot_public")]
+    enot_public: String,
     #[serde(rename = "l2w_backend_enot_secret")]
     enot_secret: String,
     #[serde(rename = "l2w_backend_enot_shop_id")]

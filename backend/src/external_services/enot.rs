@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
 
+use std::fmt::Debug;
 use anyhow::Result;
 use axum::Json;
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -184,6 +185,15 @@ struct CreateInvoiceParams {
     exclude_service: Option<Vec<PaymentMethod>>,
 }
 
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseWrapper<T>
+{
+    data: T,
+    status: i32,
+    status_check: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateInvoiceResponse {
     /**
@@ -194,7 +204,7 @@ pub struct CreateInvoiceResponse {
     /**
     Сумма инвойса (в рублях)
      */
-    amount: f32,
+    amount: String,
 
     /**
     Валюта платежа (RUB, USD, EUR, UAH)
@@ -351,7 +361,7 @@ impl RawIncomingInvoice {
     fn from_data(body: Json<Value>, hash: &str) -> Result<Self> {
         let raw_body = body.to_string();
 
-        if Self::validate_signature(hash, &CONFIG.enot_secret, &raw_body) {
+        if Self::validate_signature(hash, &CONFIG.enot_public, &raw_body) {
             let s = serde_json::from_value(body.0).unwrap();
 
             return Ok(s);
@@ -704,9 +714,7 @@ struct RejectedRefund {
 }
 
 pub(crate) mod handler {
-    use crate::external_services::enot::{
-        CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency,
-    };
+    use crate::external_services::enot::{CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency, ResponseWrapper};
     use crate::invoice_handler::{
         InvoiceData, InvoiceOperations, PaymentServiceCreateInvoiceResponse,
     };
@@ -752,13 +760,13 @@ pub(crate) mod handler {
         async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
             match response.status() {
                 StatusCode::OK => {
-                    let body = response.json::<CreateInvoiceResponse>().await;
+                    let body = response.json::<ResponseWrapper<CreateInvoiceResponse>>().await;
 
                     match body {
                         Ok(body) => InvoiceData::WaitingForPayment {
-                            external_id: body.id.clone(),
-                            payment_url: body.url.clone(),
-                            response: PaymentServiceCreateInvoiceResponse::Enot(body),
+                            external_id: body.data.id.clone(),
+                            payment_url: body.data.url.clone(),
+                            response: PaymentServiceCreateInvoiceResponse::Enot(body.data),
                         },
 
                         Err(err) => InvoiceData::FailedToCreate {
