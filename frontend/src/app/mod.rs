@@ -103,6 +103,7 @@ impl Component for App {
                         <div class="dlg_hdr_txt">
                         <b>{ "Купить CRD"}</b> 
                         </div>
+                        <div class= "dragon"></div>
                     </div>
                     <div class="sep_sm"></div>
                     <div class="dlg_r_a">
