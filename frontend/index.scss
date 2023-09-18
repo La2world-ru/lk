@@ -35,6 +35,13 @@ body {
   margin-top: -29px;
   margin-right: 0px;
 }
+.dragon {
+  content: url("img/dragon.gif");
+  width: auto;
+  height: 98px;
+  margin-top: 60px;
+  margin-left: 120px;
+}
 .hdr {
   position: absolute; top: 0; margin-top: 0; background-color: var(--color-page-bg); width: 100%; padding-top: 0; height: 50px;
 }
@@ -73,7 +80,7 @@ body {
   padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
 }
 .dlg_r_b_b {
-  padding: 7px 0px 0px 0px; font-size: 16px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 150px;
+  padding: 7px 0px 0px 11px; font-size: 16px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 125px;
 }
 .dlg_r_slct {
   min-width: 15px;
@@ -83,10 +90,10 @@ body {
   padding-left: 10px; padding-top: 0; height: 20px; margin: 0; line-height: 10px;
 }
 .dlg_r_i {
-  height: 35px; padding:0px 0px 0px 7px; box-sizing: border-box; border: 1px solid  var(--color-border)
+  height: 35px; width: 171px; padding:0px 0px 0px 9px; box-sizing: border-box; border: 1px solid  var(--color-border)
 }
 .dlg_r_i2 {
-  height: 35px; width: 75px; padding: 0px 0px 0px 5px; box-sizing: border-box; border: 1px solid  var(--color-border)
+  height: 35px; width: 75px; padding: 0px 0px 0px 9px; box-sizing: border-box; border: 1px solid  var(--color-border)
 }
 .dlg_f {
   align-items: center; display: flex; justify-content: center; height: 20px; width: 100%;
@@ -135,7 +142,7 @@ select {
   border-radius: 4px;
   width: 160px;
   height: 35px;
-  padding: 0px 0px 1px 7px;
+  padding: 0px 0px 1px 6px;
   border: 1px solid  var(--color-border)
 }
 
@@ -160,7 +167,7 @@ button {
   height: 35px;
   width:100px;
 }
-button:hover { background: #192b0d; } /* при наведении курсора мышки */
+button:hover { background: #010d0e; } /* при наведении курсора мышки */
 button:active { background: #162222; } /* при нажатии */
 button:hover { color: var(--color-fonth1); } /* при наведении курсора мышки */
 button:active { color: var(--color-h1-title-text); } /* при нажатии */
