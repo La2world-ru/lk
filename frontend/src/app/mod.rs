@@ -96,7 +96,7 @@ impl Component for App {
                 }
             },
             PaymentMsg::LinkOk(url) => {
-                log!(url);
+                web_sys::window().unwrap().location().replace(&url).unwrap();
             }
             PaymentMsg::LinkErr(err) => {
                 self.warn_message = Some(err)
