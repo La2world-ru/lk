@@ -157,9 +157,9 @@ impl DatabaseConnection {
         let options = MySqlConnectOptions::new()
             .host(&CONFIG.l2_db_path)
             .port(3306)
-            .database("la2world")
-            .username("remote")
-            .password("TEST_PASSWORD");
+            .database(&CONFIG.l2_db_name)
+            .username(&CONFIG.l2_db_login)
+            .password(&CONFIG.l2_db_password);
 
         let l2_database = MySqlPoolOptions::new()
             .max_connections(2)

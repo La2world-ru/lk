@@ -11,10 +11,15 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Deserializer};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use axum::response::IntoResponse;
 use tokio::sync::{OnceCell, RwLock};
+use tower_http::services::ServeDir;
+use tower::util::ServiceExt;
 use uuid::Uuid;
 
-use crate::api::lk_payments::{create_invoice, temp};
+use crate::api::lk_payments::{create_invoice};
 use crate::api::webhooks::enot_invoice_webhook;
 use crate::database_connection::DatabaseConnection;
 use crate::tasks::{spawn_tasks};
@@ -31,6 +36,12 @@ struct MainConfig {
     db_path: String,
     #[serde(rename = "l2w_backend_l2_db_path")]
     l2_db_path: String,
+    #[serde(rename = "l2w_backend_l2_db_login")]
+    l2_db_login: String,
+    #[serde(rename = "l2w_backend_l2_db_name")]
+    l2_db_name: String,
+    #[serde(rename = "l2w_backend_l2_db_password")]
+    l2_db_password: String,
     #[serde(rename = "l2w_backend_enot_public")]
     enot_public: String,
     #[serde(rename = "l2w_backend_enot_secret")]
@@ -74,7 +85,16 @@ async fn main() {
     let app = Router::new()
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
-        .route("/api/v1/test", get(temp))
+        .fallback_service(get(|req: Request<Body>| async move {
+            let res = ServeDir::new(&"./dist").oneshot(req).await.unwrap(); // serve dir is infallible
+            let status = res.status();
+            match status {
+                StatusCode::NOT_FOUND => {
+                    "404".into_response()
+                }
+                _ => res.into_response(),
+            }
+        }))
         .layer(tower_http::cors::CorsLayer::permissive())
         .layer(SecureClientIpSource::ConnectInfo.into_extension());
 

@@ -29,18 +29,10 @@ pub async fn create_invoice(
         .await
     {
         Ok(v) => {
-            println!("{v}");
             Json(InvoiceCreationResponse::Ok(v)).into_response()
         },
-        Err(e) => {
-            println!("{e:#?}");
+        Err(_) => {
             Json(InvoiceCreationResponse::Err).into_response()
         },
     }
-}
-
-pub async fn temp() -> String {
-    let r = get_db().await.get_unfinished_payed_invoices().await;
-
-    format!("{r:#?}")
 }
