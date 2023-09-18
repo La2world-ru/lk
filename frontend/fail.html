@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+html,
+
+:root {
+  --color-main-bg: #323b3b;
+  --color-page-bg: #162222;
+  --color-secondary-bg: #0E1818;
+  --color-font: #adb7aa;
+  --color-fonth1: whitesmoke;
+  --color-header-bg: #197d8a;
+  --color-warning: red;
+  --color-border: #2e3e23;
+  --color-h1-title-text: #adb7aa;
+  --color-h1-title-shadow: #4a8820;
+}
+::-moz-selection { /* Code for Firefox */
+  color: whitesmoke;
+  background: rgba(155, 155, 154, 0.555);
+}
+
+::selection {
+  color: whitesmoke;
+  background: rgba(155, 155, 154, 0.555);
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto,Helvetica Neue,sans-serif;
+}
+.logo {
+  content: url("img/logo.png");
+  opacity: 0.9;
+  width: auto;
+  height: 85px;
+  margin-top: -29px;
+  margin-right: 0px;
+}
+.dragon {
+  content: url("img/dragon.gif");
+  width: auto;
+  height: 98px;
+  margin-top: 112px;
+  margin-left: 200px;
+}
+.crd {
+  padding-left: 3px;
+  color: brown;
+}
+.hdr {
+  position: absolute; top: 0; margin-top: 0; background-color: var(--color-page-bg); width: 100%; padding-top: 0; height: 50px;
+}
+.sep_b {
+  position: absolute; top: 50px; margin-top: 0; width: 100%; padding-top: 0; height: 20px;
+}
+.sep_sm {
+  height: 18px
+}
+.dlg_a {
+  top: 80px; position: absolute; align-items: center; display: flex; justify-content: center; border-radius: 6px;
+}
+.dlg_b {
+  border-radius: 6px;
+  box-sizing: border-box; border: 1px solid  var(--color-border);
+  box-shadow: 0px 7px 12px 0px rgba(0, 0, 0, 0.5); 
+  position: relative; background-color: var(--color-page-bg); width: 500px; height: 305px; align-items: start;
+}
+.dlg_hdr {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  color: var(--color-h1-title-text);
+  text-shadow: 2px 1px 5px var(--color-h1-title-shadow);
+  position: relative; width: 100%; background-color: var(--color-secondary-bg); height: 40px; color: var(--color-fonth1); font-size: 25px; font-weight: 500; display: flex; align-content: center; justify-content: left; padding: 22px 0px 9px 0px; 
+}
+.dlg_hdr_txt {
+  padding-left: 3px;
+}
+.dlg_r_a {
+  position: relative; width: 100%; display: flex; align-content: center; justify-content: left
+}
+.dlg_r_b {
+  padding: 8px 0px 0px 15px; font-size: 17px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
+}
+.dlg_r_b2 {
+  padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
+}
+.dlg_r_b_b {
+  padding: 7px 0px 0px 11px; font-size: 16px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 125px;
+}
+.dlg_r_slct {
+  min-width: 15px;
+  padding-left: 10px; padding-top: 0; height: 20px; margin: 0; line-height: 10px;
+}
+.dlg_r_c {
+  padding-left: 10px; padding-top: 0; height: 20px; margin: 0; line-height: 10px;
+}
+.dlg_r_i {
+  height: 35px; width: 171px; padding:0px 0px 0px 9px; box-sizing: border-box; border: 1px solid  var(--color-border)
+}
+.dlg_r_i2 {
+  height: 35px; width: 75px; padding: 0px 0px 0px 9px; box-sizing: border-box; border: 1px solid  var(--color-border)
+}
+.dlg_f {
+  align-items: center; display: flex; justify-content: center; height: 20px; width: 100%;
+  padding: 15px 0px 0px 178px;
+}
+.dlg_f2 {
+  align-items: center; display: flex; justify-content: center; height: 20px; width: 100%;
+  padding: 0px 0px 0px 0px;
+}
+.dlg_f2_t {
+  font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 15px 77px 0px;
+}
+
+body {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+
+  background: var(--color-main-bg);
+  font-size: 1.5rem;
+  font-family: Roboto,Helvetica Neue,sans-serif;
+}
+
+
+button {
+  cursor: pointer;
+  background-color: var(--color-secondary-bg);
+  border: 1px solid  var(--color-border);
+  color: var(--color-h1-title-text);
+  padding: 5px 5px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  border-radius: 4px;
+  height: 35px;
+  width:100px;
+}
+button:hover { background: #010d0e; } /* при наведении курсора мышки */
+button:active { background: #162222; } /* при нажатии */
+button:hover { color: var(--color-fonth1); } /* при наведении курсора мышки */
+button:active { color: var(--color-h1-title-text); } /* при нажатии */
+</style>
+<head>
+    <meta charset="utf-8" />
+    <title>La2World Donation</title>
+    <link data-trunk rel="sass" href="index.scss" />
+    <link rel="stylesheet" href="index.scss">
+    <link data-trunk rel="copy-dir" href="img">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+</head>
+
+<div class="sep_b">
+</div>
+<div class="dlg_a">
+    <div class="dlg_b">
+        <div class="dlg_hdr">
+        <span class="logo pull-right"></span>
+            <div class="dlg_hdr_txt">
+            <b>Ошибка</b> 
+            </div>
+            <div class= "dragon"></div>
+        </div>
+        <div class="crd"><center>
+            <h5>Извините, что-то пошло не так.</h5>
+            <img src="https://la2world.ru/files/craft/CRD.jpg" alt="линейка, сервер high-five pvp server x1200 x1000 x100">
+            <img src="https://la2world.ru/files/craft/CRD.jpg" alt="линейка, сервер high-five pvp server x1200 x1000 x100">
+            <img src="https://la2world.ru/files/craft/CRD.jpg" alt="линейка, сервер high-five pvp server x1200 x1000 x100">
+            <img src="https://la2world.ru/files/craft/CRD.jpg" alt="линейка, сервер high-five pvp server x1200 x1000 x100">
+            <img src="https://la2world.ru/files/craft/CRD.jpg" alt="линейка, сервер high-five pvp server x1200 x1000 x100">
+            <img src="https://la2world.ru/files/craft/CRD.jpg" alt="линейка, сервер high-five pvp server x1200 x1000 x100">
+            </center></div>
+        <div class="dlg_r_a">
+            <div class="dlg_r_b">
+            </div>
+        </div>
+        <div class="sep_sm"></div>
+        <div class="dlg_r_a">
+            <div class="dlg_r_b2">
+            </div>
+        </div>
+        <div class="dlg_r_a">
+            <div class="dlg_r_b_b">
+            </div>
+        </div>
+        <div class="dlg_f">
+            <button class="fill" onclick="window.location.href='https://la2world.ru/';">
+                На главную
+            </button>
+        </div>
+        <div class="sep_sm"></div>
+    </div>
+</div>
+</html>
