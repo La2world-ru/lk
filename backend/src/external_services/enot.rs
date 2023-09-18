@@ -385,7 +385,7 @@ impl RawIncomingInvoice {
         res[..] == decoded[..]
     }
 
-    pub fn into_invoice_data(self) -> Result<IncomingInvoice> {
+    pub fn into_invoice_data(self) -> Result<InvoiceUpdate> {
         match self.call_type {
             1 => self.handle_payment(),
             2 => self.handle_refund(),
@@ -393,7 +393,7 @@ impl RawIncomingInvoice {
         }
     }
 
-    fn handle_payment(self) -> Result<IncomingInvoice> {
+    fn handle_payment(self) -> Result<InvoiceUpdate> {
         match self.status {
             PaymentProceededStatus::Success => {
                 let state = "success".to_string();
@@ -452,7 +452,7 @@ impl RawIncomingInvoice {
                     .into());
                 };
 
-                Ok(IncomingInvoice::SucceedPayment(SucceedPayment {
+                Ok(InvoiceUpdate::SucceedPayment(SucceedPayment {
                     invoice_id: self.invoice_id,
                     amount,
                     currency: self.currency,
@@ -501,7 +501,7 @@ impl RawIncomingInvoice {
                     v => return Err(ProceedInvoiceError::WrongStatusCode { code: v, state }.into()),
                 };
 
-                Ok(IncomingInvoice::RejectedPayment(RejectedPayment {
+                Ok(InvoiceUpdate::RejectedPayment(RejectedPayment {
                     invoice_id: self.invoice_id,
                     amount,
                     currency: self.currency,
@@ -516,13 +516,13 @@ impl RawIncomingInvoice {
         }
     }
 
-    fn handle_refund(self) -> Result<IncomingInvoice> {
+    fn handle_refund(self) -> Result<InvoiceUpdate> {
         Err(ProceedInvoiceError::UnsupportedOperation.into())
     }
 }
 
 #[derive(Debug)]
-enum IncomingInvoice {
+enum InvoiceUpdate {
     SucceedPayment(SucceedPayment),
     RejectedPayment(RejectedPayment),
     SucceedRefund(SucceedRefund),
@@ -714,14 +714,16 @@ struct RejectedRefund {
 }
 
 pub(crate) mod handler {
-    use crate::external_services::enot::{CreateInvoiceParams, CreateInvoiceResponse, PaymentCurrency, ResponseWrapper};
-    use crate::invoice_handler::{
-        InvoiceData, InvoiceOperations, PaymentServiceCreateInvoiceResponse,
-    };
+    use crate::external_services::enot::{CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate, PaymentCurrency, RawIncomingInvoice, ResponseWrapper};
+    use crate::invoice_handler::{InvoiceData, InvoiceOperations, InvoiceStatusUpdate, InvoiceStatusUpdateData, PaymentServiceCreateInvoiceResponse};
     use crate::CONFIG;
+
+    use anyhow::Result;
     use async_trait::async_trait;
+    use axum::Json;
     use reqwest::header::HeaderMap;
     use reqwest::{RequestBuilder, Response, StatusCode};
+    use serde_json::Value;
     use uuid::Uuid;
 
     pub struct EnotInvoiceHandler {}
@@ -755,6 +757,46 @@ pub(crate) mod handler {
                 .post(&CONFIG.enot_api_url)
                 .headers(headers)
                 .body(serde_json::to_string(&params).unwrap())
+        }
+
+        fn parse_invoice_status_update(&self, body: Json<Value>, hash: &str) -> Result<InvoiceStatusUpdate> {
+            let data = RawIncomingInvoice::from_data(body, hash)?.into_invoice_data()?;
+
+            match data {
+                InvoiceUpdate::SucceedPayment(v) => {
+                    Ok(InvoiceStatusUpdate {
+                        order_id: v.order_id,
+                        external_id: v.invoice_id.to_string(),
+                        data: InvoiceStatusUpdateData::Payed,
+                    })
+                }
+
+                InvoiceUpdate::RejectedPayment(v) => {
+                    Ok(InvoiceStatusUpdate {
+                        order_id: v.order_id,
+                        external_id: v.invoice_id.to_string(),
+                        data: InvoiceStatusUpdateData::Aborted {
+                            reason: format!("{:#?}", v.close_status)
+                        },
+                    })
+                }
+
+                InvoiceUpdate::SucceedRefund(v) => {
+                    Ok(InvoiceStatusUpdate {
+                        order_id: v.order_id,
+                        external_id: v.invoice_id.to_string(),
+                        data: InvoiceStatusUpdateData::None,
+                    })
+                }
+
+                InvoiceUpdate::RejectedRefund(v) => {
+                    Ok(InvoiceStatusUpdate {
+                        order_id: v.order_id,
+                        external_id: v.invoice_id.to_string(),
+                        data: InvoiceStatusUpdateData::None,
+                    })
+                }
+            }
         }
 
         async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
@@ -805,26 +847,6 @@ pub(crate) mod handler {
     }
 }
 
-pub(crate) mod webhooks {
-    use crate::external_services::enot::RawIncomingInvoice;
-    use axum::http::HeaderMap;
-    use axum::Json;
-    use serde_json::Value;
-
-    pub async fn invoice_webhook(headers: HeaderMap, body: Json<Value>) {
-        let Some(hash) = headers.get("x-api-sha256-signature") else {
-            return;
-        };
-
-        let Ok(raw_invoice) = RawIncomingInvoice::from_data(body, hash.to_str().unwrap()) else {
-            return;
-        };
-
-        let invoice = raw_invoice.into_invoice_data();
-
-        println!("{invoice:#?}");
-    }
-}
 
 #[cfg(test)]
 mod tests {

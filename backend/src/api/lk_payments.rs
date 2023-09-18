@@ -30,12 +30,12 @@ pub async fn create_invoice(
         .await
     {
         Ok(v) => v,
-        Err(_) => "error".into(),
+        Err(_) => "Error occurred".into(),
     }
 }
 
 pub async fn temp() -> String {
-    let r = get_db().get_all_invoices().await;
+    let r = get_db().get_unfinished_payed_invoices().await;
 
     format!("{r:#?}")
 }
