@@ -4,12 +4,17 @@ use axum::Json;
 use axum::response::{IntoResponse, Response};
 use axum_client_ip::SecureClientIp;
 use shared::{CreateInvoice, InvoiceCreationResponse};
+use crate::database_connection::DbResponse;
 
 pub async fn create_invoice(
     client_ip: SecureClientIp,
     Json(payload): Json<CreateInvoice>,
 ) -> Response {
-    let Ok(char_id) = get_db().get_char_id_by_name(&payload.char_name).await else {
+    let Ok(char_id) = get_db().await.get_char_id_by_name(&payload.char_name).await else {
+        return Json(InvoiceCreationResponse::Err).into_response();
+    };
+
+    let DbResponse::Ok(char_id) = char_id else {
         return Json(InvoiceCreationResponse::WrongNick).into_response();
     };
 
@@ -35,7 +40,7 @@ pub async fn create_invoice(
 }
 
 pub async fn temp() -> String {
-    let r = get_db().get_unfinished_payed_invoices().await;
+    let r = get_db().await.get_unfinished_payed_invoices().await;
 
     format!("{r:#?}")
 }

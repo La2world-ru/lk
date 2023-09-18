@@ -55,7 +55,7 @@ impl InvoiceHandler {
                     return;
                 };
 
-                let Some(original_invoice) = get_db().get_invoice_by_id(invoice_update.order_id).await else {
+                let Some(original_invoice) = get_db().await.get_invoice_by_id(invoice_update.order_id).await else {
                     return;
                 };
 
@@ -71,7 +71,7 @@ impl InvoiceHandler {
 
                         match invoice_update.data {
                             InvoiceStatusUpdateData::Payed => {
-                                get_db().update_invoice_data(
+                                get_db().await.update_invoice_data(
                                     original_invoice.id,
                                     InvoiceData::Payed {
                                         stored_in_l2_db: false
@@ -79,7 +79,7 @@ impl InvoiceHandler {
                                 ).await
                             }
                             InvoiceStatusUpdateData::Aborted { reason } => {
-                                get_db().update_invoice_data(
+                                get_db().await.update_invoice_data(
                                     original_invoice.id,
                                     InvoiceData::Aborted {
                                         reason
@@ -153,7 +153,7 @@ impl InvoiceHandler {
             }
         };
 
-        get_db().create_invoice(created_invoice.clone()).await;
+        get_db().await.create_invoice(created_invoice.clone()).await;
 
         match created_invoice.data {
             InvoiceData::WaitingForPayment { payment_url, .. } => Ok(payment_url),
@@ -171,15 +171,15 @@ pub enum PaymentServiceCreateInvoiceResponse {
 pub struct Invoice {
     #[serde(rename = "_id")]
     #[serde(with = "uuid_1_as_binary")]
-    id: Uuid,
-    char_name: String,
-    char_id: i32,
+    pub(crate) id: Uuid,
+    pub char_name: String,
+    pub char_id: i32,
     data: InvoiceData,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     client_ip: IpAddr,
     service: PaymentServices,
-    amount: f32,
+    pub amount: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

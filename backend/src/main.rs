@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Deserializer};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
-use tokio::sync::OnceCell;
+use tokio::sync::{OnceCell, RwLock};
 use uuid::Uuid;
 
 use crate::api::lk_payments::{create_invoice, temp};
@@ -23,7 +23,7 @@ lazy_static! {
     static ref CONFIG: MainConfig = envy::from_env::<MainConfig>().unwrap();
 }
 
-static DB: OnceCell<DatabaseConnection> = OnceCell::const_new();
+static DB: OnceCell<RwLock<DatabaseConnection>> = OnceCell::const_new();
 
 #[derive(Deserialize, Debug)]
 struct MainConfig {
@@ -56,13 +56,18 @@ fn ip_vec_from_str<'de,  D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>
     Ok(s.iter().map(|v| IpAddr::from_str(v).unwrap()).collect())
 }
 
-pub fn get_db() -> &'static DatabaseConnection {
-    DB.get().unwrap()
+pub async fn get_db() -> tokio::sync::RwLockReadGuard<'static, DatabaseConnection>
+{
+    DB.get().unwrap().read().await
+}
+pub async fn get_db_mut() -> tokio::sync::RwLockWriteGuard<'static, DatabaseConnection>
+{
+    DB.get().unwrap().write().await
 }
 
 #[tokio::main]
 async fn main() {
-    DB.set(DatabaseConnection::new().await).unwrap();
+    DB.set(RwLock::new(DatabaseConnection::new().await)).unwrap();
 
     println!("{:#?}", CONFIG.enot_allowed_ips);
 
