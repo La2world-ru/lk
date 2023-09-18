@@ -1,22 +1,16 @@
 use crate::get_db;
-use crate::invoice_handler::{PaymentServices, INVOICE_HANDLER};
+use crate::invoice_handler::{INVOICE_HANDLER};
 use axum::Json;
+use axum::response::{IntoResponse, Response};
 use axum_client_ip::SecureClientIp;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-pub struct CreateInvoice {
-    amount: f32,
-    char_name: String,
-    service: PaymentServices,
-}
+use shared::{CreateInvoice, InvoiceCreationResponse};
 
 pub async fn create_invoice(
     client_ip: SecureClientIp,
     Json(payload): Json<CreateInvoice>,
-) -> String {
+) -> Response {
     let Ok(char_id) = get_db().get_char_id_by_name(&payload.char_name).await else {
-        return "error".into();
+        return Json(InvoiceCreationResponse::WrongNick).into_response();
     };
 
     match INVOICE_HANDLER
@@ -29,8 +23,14 @@ pub async fn create_invoice(
         )
         .await
     {
-        Ok(v) => v,
-        Err(_) => "Error occurred".into(),
+        Ok(v) => {
+            println!("{v}");
+            Json(InvoiceCreationResponse::Ok(v)).into_response()
+        },
+        Err(e) => {
+            println!("{e:#?}");
+            Json(InvoiceCreationResponse::Err).into_response()
+        },
     }
 }
 

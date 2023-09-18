@@ -18,6 +18,5 @@ async fn give_crd() {
     let invoices = get_db().get_unfinished_payed_invoices().await;
 
     for invoice in &invoices {
-        println!("{invoice:#?}");
     }
 }

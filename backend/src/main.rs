@@ -70,6 +70,7 @@ async fn main() {
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
         .route("/api/v1/test", get(temp))
+        .layer(tower_http::cors::CorsLayer::permissive())
         .layer(SecureClientIpSource::ConnectInfo.into_extension());
 
     spawn_tasks();

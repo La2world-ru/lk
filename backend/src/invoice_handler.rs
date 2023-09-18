@@ -10,6 +10,7 @@ use serde_json::Value;
 use uuid::Uuid;
 use anyhow::Result;
 use mongodb::bson::{serde_helpers::uuid_1_as_binary};
+use shared::PaymentServices;
 
 use crate::external_services::enot;
 use crate::external_services::enot::handler::EnotInvoiceHandler;
@@ -24,11 +25,6 @@ pub trait InvoiceOperations {
     fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder;
     fn parse_invoice_status_update(&self, body: Json<Value>, hash: &str) -> Result<InvoiceStatusUpdate>;
     async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData;
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum PaymentServices {
-    Enot,
 }
 
 pub struct InvoiceHandler {
