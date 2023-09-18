@@ -8,6 +8,8 @@ use crate::app::util::{get_value_from_event, get_value_from_input_event};
 mod api;
 mod util;
 
+const MIN_CRD: u32 = 10;
+
 pub enum PaymentMsg {
     UpdateNick(String),
     UpdateCrd(String),
@@ -55,8 +57,8 @@ impl Component for App {
             PaymentMsg::TryPayment => {
                 let mut is_ok = true;
 
-                if self.crd_amount <= 0 {
-                    self.warn_message = Some("Неверное количество CRD!".to_string());
+                if self.crd_amount < MIN_CRD {
+                    self.warn_message = Some(format!("Минимум {MIN_CRD} CRD!"));
                     is_ok = false;
                 }
 
