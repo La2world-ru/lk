@@ -1,28 +1,29 @@
 use std::str::FromStr;
+use gloo_console::log;
 use yew::prelude::*;
+use shared::{InvoiceCreationResponse, PaymentServices};
+use crate::app::api::BackendApi;
 use crate::app::util::{get_value_from_event, get_value_from_input_event};
 
 mod api;
 mod util;
 
-#[derive(PartialEq)]
-pub enum PaymentMethod {
-    Enot,
-    Test
-}
+const MIN_CRD: u32 = 10;
 
 pub enum PaymentMsg {
     UpdateNick(String),
     UpdateCrd(String),
     UpdatePaymentMethod(String),
-    TryPayment
+    TryPayment,
+    LinkOk(String),
+    LinkErr(String),
 }
 
 pub struct App {
     current_nick: String,
     warn_message: Option<String>,
     crd_amount: u32,
-    payment_method: PaymentMethod,
+    payment_method: PaymentServices,
 }
 
 impl Component for App {
@@ -34,11 +35,11 @@ impl Component for App {
             current_nick: "".to_string(),
             warn_message: None,
             crd_amount: 0,
-            payment_method: PaymentMethod::Enot,
+            payment_method: PaymentServices::Enot,
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             PaymentMsg::UpdateNick(v) => self.current_nick = v,
             PaymentMsg::UpdateCrd(v) => {
@@ -50,16 +51,14 @@ impl Component for App {
             }
             PaymentMsg::UpdatePaymentMethod(v) => {
                 if v == "enot" {
-                    self.payment_method = PaymentMethod::Enot;
-                } else if v == "test" {
-                    self.payment_method = PaymentMethod::Test;
+                    self.payment_method = PaymentServices::Enot;
                 }
             }
             PaymentMsg::TryPayment => {
                 let mut is_ok = true;
 
-                if self.crd_amount <= 0 {
-                    self.warn_message = Some("Неверное количество CRD!".to_string());
+                if self.crd_amount < MIN_CRD {
+                    self.warn_message = Some(format!("Минимум {MIN_CRD} CRD!"));
                     is_ok = false;
                 }
 
@@ -70,9 +69,42 @@ impl Component for App {
 
                 if is_ok {
                     self.warn_message = None;
+
+                    let name = self.current_nick.clone();
+                    let amount = self.crd_amount;
+                    let method = self.payment_method;
+
+                    ctx.link().send_future(async move {
+                        match BackendApi::create_invoice(name, amount, method).await {
+                            Ok(resp) => {
+                                match resp {
+                                    InvoiceCreationResponse::Ok(v) => {
+                                        PaymentMsg::LinkOk(v)
+                                    }
+                                    InvoiceCreationResponse::WrongNick => {
+                                        PaymentMsg::LinkErr("Неверное имя персонажа!".to_string())
+                                    }
+                                    InvoiceCreationResponse::Err => {
+                                        PaymentMsg::LinkErr("Network error".to_string())
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                log!(format!("{e:#?}"));
+                                PaymentMsg::LinkErr("Network error".to_string())
+                            }
+                        }
+                    });
                 }
             },
+            PaymentMsg::LinkOk(url) => {
+                web_sys::window().unwrap().location().replace(&url).unwrap();
+            }
+            PaymentMsg::LinkErr(err) => {
+                self.warn_message = Some(err)
+            }
         };
+
         true
     }
 
@@ -130,9 +162,7 @@ impl Component for App {
                         </div>
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
-                                <option value="enot" selected={self.payment_method == PaymentMethod::Enot}>{ "Enot" }</option>
-                                <option value="test" selected={self.payment_method == PaymentMethod::Test}>{ "Prime Payments" }</option>
-                                <option value="test2" selected={self.payment_method == PaymentMethod::Test}>{ "Hot Skins" }</option>
+                                <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
                             </select>
                         </div>
                     </div>

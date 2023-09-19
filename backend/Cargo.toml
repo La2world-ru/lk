@@ -6,17 +6,25 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-surrealdb = { version = "1.0.0-beta.11", features = ["kv-speedb"] }
-axum = { workspace=true }
+shared = { path = "../shared" }
 tokio = { workspace=true }
 thiserror = { workspace=true }
 anyhow = { workspace=true }
 serde = { workspace=true }
 serde_json = { workspace=true }
+uuid = { workspace=true  }
+reqwest = { workspace=true }
+axum = { version = "0.6" }
 envy = "0.4"
 serde_with = { version = "3" }
-chrono = { version = "0.4" }
+chrono = { version = "0.4", features = ["serde"] }
 hmac = "0.12"
+tower-http = { version = "0.4", features = ["cors"] }
 sha2 = "0.10"
 hex = { version = "0.4" }
 lazy_static = { version = "1" }
+axum-client-ip = "0.4"
+async-trait = "0.1"
+mongodb = { version = "2.6", features = ["tokio-runtime", "bson-uuid-1"] }
+futures = { version = "0.3" }
+sqlx = { version = "0.7", features = ["mysql", "runtime-tokio"]}
