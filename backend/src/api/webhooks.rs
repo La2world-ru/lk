@@ -1,25 +1,29 @@
-use axum::http::HeaderMap;
+use std::net::SocketAddr;
+use axum::extract::ConnectInfo;
+use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
-use axum_client_ip::SecureClientIp;
+use axum::response::{IntoResponse, Response};
 use serde_json::Value;
 
 use crate::{CONFIG};
 use crate::invoice_handler::{INVOICE_HANDLER, ServiceInvoiceUpdate};
 
 pub async fn enot_invoice_webhook(
-    client_ip: SecureClientIp,
+    ConnectInfo(client_ip): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     body: Json<Value>
-) -> String {
-    if !CONFIG.enot_allowed_ips.contains(&client_ip.0) {
-        return format!("Blocked Ip {:?}", client_ip.0);
+) -> Response {
+    if !CONFIG.enot_allowed_ips.contains(&client_ip.ip()) {
+        return StatusCode::FORBIDDEN.into_response();
     }
 
     let Some(hash) = headers.get("x-api-sha256-signature") else {
-        return "Err".to_string();
+        return StatusCode::NOT_ACCEPTABLE.into_response();
     };
 
-    INVOICE_HANDLER.handle_invoice_update(ServiceInvoiceUpdate::Enot { body, hash: hash.to_str().unwrap().to_string() }).await;
+    let Ok(_) = INVOICE_HANDLER.handle_invoice_update(ServiceInvoiceUpdate::Enot { body, hash: hash.to_str().unwrap().to_string() }).await else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
 
-    "Ok".to_string()
+    StatusCode::OK.into_response()
 }

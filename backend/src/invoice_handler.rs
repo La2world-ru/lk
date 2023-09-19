@@ -45,18 +45,16 @@ impl InvoiceHandler {
         }
     }
 
-    pub async fn handle_invoice_update(&self, data: ServiceInvoiceUpdate) {
+    pub async fn handle_invoice_update(&self, data: ServiceInvoiceUpdate) -> Result<()> {
         match data {
             ServiceInvoiceUpdate::Enot {
                 body,
                 hash,
             } => {
-                let Ok(invoice_update) = self.enot.parse_invoice_status_update(body, &hash) else {
-                    return;
-                };
+                let invoice_update = self.enot.parse_invoice_status_update(body, &hash)?;
 
                 let Some(original_invoice) = get_db().await.get_invoice_by_id(invoice_update.order_id).await else {
-                    return;
+                    return Ok(())
                 };
 
                 let update_res = match original_invoice.data {
@@ -66,7 +64,7 @@ impl InvoiceHandler {
                     } => {
 
                         if external_id != invoice_update.external_id {
-                            return;
+                            return Ok(());
                         }
 
                         match invoice_update.data {
@@ -74,7 +72,8 @@ impl InvoiceHandler {
                                 get_db().await.update_invoice_data(
                                     original_invoice.id,
                                     InvoiceData::Payed {
-                                        stored_in_l2_db: false
+                                        stored_in_l2_db: false,
+                                        external_id
                                     }
                                 ).await
                             }
@@ -82,17 +81,18 @@ impl InvoiceHandler {
                                 get_db().await.update_invoice_data(
                                     original_invoice.id,
                                     InvoiceData::Aborted {
-                                        reason
+                                        reason,
+                                        external_id
                                     }
                                 ).await
                             }
                             InvoiceStatusUpdateData::None => {
-                                return;
+                                return Ok(());
                             }
                         }
                     }
                     _ => {
-                        return;
+                        return Ok(());
                     }
                 };
 
@@ -101,6 +101,8 @@ impl InvoiceHandler {
                 };
             }
         }
+
+        Ok(())
     }
 
     pub async fn create_invoice(
@@ -174,7 +176,7 @@ pub struct Invoice {
     pub(crate) id: Uuid,
     pub char_name: String,
     pub char_id: i32,
-    data: InvoiceData,
+    pub(crate) data: InvoiceData,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     client_ip: IpAddr,
@@ -194,9 +196,11 @@ pub enum InvoiceData {
     },
     Aborted {
         reason: String,
+        external_id: String,
     },
     Payed {
         stored_in_l2_db: bool,
+        external_id: String,
     },
 }
 

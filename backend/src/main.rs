@@ -6,7 +6,6 @@ mod tasks;
 
 use axum::routing::{get, post};
 use axum::Router;
-use axum_client_ip::SecureClientIpSource;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Deserializer};
 use std::net::{IpAddr, SocketAddr};
@@ -14,6 +13,7 @@ use std::str::FromStr;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::IntoResponse;
+use axum_server::tls_rustls::RustlsConfig;
 use tokio::sync::{OnceCell, RwLock};
 use tower_http::services::ServeDir;
 use tower::util::ServiceExt;
@@ -34,6 +34,10 @@ static DB: OnceCell<RwLock<DatabaseConnection>> = OnceCell::const_new();
 struct MainConfig {
     #[serde(rename = "l2w_backend_db_path")]
     db_path: String,
+    #[serde(rename = "l2w_backend_cert_path")]
+    cert_path: String,
+    #[serde(rename = "l2w_backend_key_path")]
+    key_path: String,
     #[serde(rename = "l2w_backend_l2_db_path")]
     l2_db_path: String,
     #[serde(rename = "l2w_backend_l2_db_login")]
@@ -80,7 +84,13 @@ pub async fn get_db_mut() -> tokio::sync::RwLockWriteGuard<'static, DatabaseConn
 async fn main() {
     DB.set(RwLock::new(DatabaseConnection::new().await)).unwrap();
 
-    println!("{:#?}", CONFIG.enot_allowed_ips);
+    let config = RustlsConfig::from_pem_file(
+        &CONFIG.cert_path,
+        &CONFIG.key_path,
+    )
+        .await
+        .unwrap();
+    let addr = SocketAddr::from(([127, 0, 0, 1], 14082));
 
     let app = Router::new()
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
@@ -95,13 +105,17 @@ async fn main() {
                 _ => res.into_response(),
             }
         }))
-        .layer(tower_http::cors::CorsLayer::permissive())
-        .layer(SecureClientIpSource::ConnectInfo.into_extension());
+        .layer(tower_http::cors::CorsLayer::permissive());
 
     spawn_tasks();
 
-    axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
+    axum_server::bind_rustls(addr, config)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
+
+    // axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
+    //     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+    //     .await
+    //     .unwrap();
 }

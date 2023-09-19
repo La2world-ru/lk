@@ -1,13 +1,14 @@
+use std::net::SocketAddr;
+use axum::extract::ConnectInfo;
 use crate::get_db;
 use crate::invoice_handler::{INVOICE_HANDLER};
 use axum::Json;
 use axum::response::{IntoResponse, Response};
-use axum_client_ip::SecureClientIp;
 use shared::{CreateInvoice, InvoiceCreationResponse};
 use crate::database_connection::DbResponse;
 
 pub async fn create_invoice(
-    client_ip: SecureClientIp,
+    ConnectInfo(client_ip): ConnectInfo<SocketAddr>,
     Json(payload): Json<CreateInvoice>,
 ) -> Response {
     let Ok(char_id) = get_db().await.get_char_id_by_name(&payload.char_name).await else {
@@ -24,7 +25,7 @@ pub async fn create_invoice(
             payload.char_name,
             char_id,
             payload.service,
-            client_ip.0,
+            client_ip.ip(),
         )
         .await
     {
