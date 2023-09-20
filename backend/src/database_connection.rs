@@ -91,7 +91,7 @@ impl DatabaseConnection {
 
     pub async fn get_unfinished_payed_invoices(&self) -> Vec<Invoice> {
         let collection = self.database.collection::<Invoice>("invoice");
-        let res = collection.find(doc! {"data": {"Payed": {"stored_in_l2_db": false}}}, None).await.unwrap();
+        let res = collection.find(doc! {"data.Payed.stored_in_l2_db": false}, None).await.unwrap();
 
         let res: Vec<Invoice> = res.try_collect().await.unwrap();
 
@@ -116,28 +116,22 @@ impl DatabaseConnection {
         Ok(())
     }
 
-    pub async fn mark_invoice_as_stored(&self, invoice_id: Uuid) -> Result<()> {
-        let collection = self.database.collection::<Invoice>("invoice");
-
-        let search = to_document(&MongoIdDoc{id: invoice_id}).unwrap();
-
-        collection.update_one(search , doc!{"$set": {"data": {"Payed": {"stored_in_l2_db": true}}}}, None).await?;
-
-        Ok(())
-    }
-
     pub async fn create_invoice(&self, rec: Invoice) {
         let collection = self.database.collection::<Invoice>("invoice");
         collection.insert_one(rec, None).await.unwrap();
     }
 
-    async fn create_l2_db_connection() -> Result<Pool<MySql>, Error> {
-        let options = MySqlConnectOptions::new()
+    fn get_l2_db_options() -> MySqlConnectOptions {
+        MySqlConnectOptions::new()
             .host(&CONFIG.l2_db_path)
             .port(3306)
-            .database("la2world")
-            .username("remote")
-            .password("TEST_PASSWORD");
+            .database(&CONFIG.l2_db_name)
+            .username(&CONFIG.l2_db_login)
+            .password(&CONFIG.l2_db_password)
+    }
+
+    async fn create_l2_db_connection() -> Result<Pool<MySql>, Error> {
+        let options = Self::get_l2_db_options();
 
         MySqlPoolOptions::new()
             .max_connections(2)
@@ -154,12 +148,7 @@ impl DatabaseConnection {
 
         let database = client.database("l2w_lk_payments_db");
 
-        let options = MySqlConnectOptions::new()
-            .host(&CONFIG.l2_db_path)
-            .port(3306)
-            .database("la2world")
-            .username("remote")
-            .password("TEST_PASSWORD");
+        let options = Self::get_l2_db_options();
 
         let l2_database = MySqlPoolOptions::new()
             .max_connections(2)

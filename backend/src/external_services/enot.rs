@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
 
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 use anyhow::Result;
 use axum::Json;
@@ -12,7 +13,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
@@ -359,7 +360,28 @@ pub enum ProceedInvoiceError {
 
 impl RawIncomingInvoice {
     fn from_data(body: Json<Value>, hash: &str) -> Result<Self> {
-        let raw_body = body.to_string();
+        let mut raw_body = String::new();
+
+        println!("{}", body.0.to_string());
+
+        let mut c: BTreeMap<String, Value> = BTreeMap::new();
+        {
+            let raw_body: Map<String, Value> = body.0.as_object().unwrap().clone();
+            for r in raw_body {
+                c.insert(r.0, r.1);
+            }
+        }
+
+        raw_body.push_str("{");
+        for (i, v) in c.iter().enumerate() {
+            raw_body.push_str(&format!(r#""{}":{}"#, v.0, v.1.to_string()));
+            if i < c.len()-1 {
+                raw_body.push_str(",");
+            }
+        }
+        raw_body.push_str("}");
+
+        println!("{raw_body}");
 
         if Self::validate_signature(hash, &CONFIG.enot_public, &raw_body) {
             let s = serde_json::from_value(body.0).unwrap();
@@ -736,7 +758,7 @@ pub(crate) mod handler {
                 order_id,
                 currency: Some(PaymentCurrency::RUB),
                 shop_id: CONFIG.enot_shop_id,
-                hook_url: None,
+                hook_url: Some("https://pay.la2world.ru/webhook/enot/invoice".to_string()),
                 custom_fields: None,
                 comment: None,
                 fail_url: None,

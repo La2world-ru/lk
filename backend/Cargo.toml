@@ -14,16 +14,17 @@ serde = { workspace=true }
 serde_json = { workspace=true }
 uuid = { workspace=true  }
 reqwest = { workspace=true }
-axum = { version = "0.6" }
+axum = { version = "0.6"}
+axum-server = { version = "0.5", features = ["tls-rustls"] }
+tower = { version = "0.4" }
 envy = "0.4"
 serde_with = { version = "3" }
 chrono = { version = "0.4", features = ["serde"] }
 hmac = "0.12"
-tower-http = { version = "0.4", features = ["cors"] }
+tower-http = { version = "0.4", features = ["cors", "fs"] }
 sha2 = "0.10"
 hex = { version = "0.4" }
 lazy_static = { version = "1" }
-axum-client-ip = "0.4"
 async-trait = "0.1"
 mongodb = { version = "2.6", features = ["tokio-runtime", "bson-uuid-1"] }
 futures = { version = "0.3" }

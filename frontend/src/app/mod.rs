@@ -8,7 +8,7 @@ use crate::app::util::{get_value_from_event, get_value_from_input_event};
 mod api;
 mod util;
 
-const MIN_CRD: u32 = 10;
+const MIN_CRD: u32 = 20;
 
 pub enum PaymentMsg {
     UpdateNick(String),
@@ -34,7 +34,7 @@ impl Component for App {
         return Self {
             current_nick: "".to_string(),
             warn_message: None,
-            crd_amount: 0,
+            crd_amount: MIN_CRD,
             payment_method: PaymentServices::Enot,
         }
     }
@@ -44,7 +44,7 @@ impl Component for App {
             PaymentMsg::UpdateNick(v) => self.current_nick = v,
             PaymentMsg::UpdateCrd(v) => {
                 if v == "" {
-                    self.crd_amount = 0
+                    self.crd_amount = MIN_CRD
                 } else if let Ok(v) = u32::from_str(&*v){
                     self.crd_amount = v
                 }
