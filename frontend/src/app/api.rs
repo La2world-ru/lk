@@ -4,7 +4,7 @@ use gloo_console::log;
 use gloo_net::http::Request;
 use web_sys::RequestMode;
 
-const BACKEND_API_URL: &str = "http://127.0.01:14082/api/v1";
+const BACKEND_API_URL: &str = "http://pay.la2world.ru/api/v1";
 
 pub struct BackendApi {
 
