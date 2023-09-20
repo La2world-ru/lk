@@ -1,9 +1,9 @@
-use std::str::FromStr;
-use gloo_console::log;
-use yew::prelude::*;
-use shared::{InvoiceCreationResponse, PaymentServices};
 use crate::app::api::BackendApi;
 use crate::app::util::{get_value_from_event, get_value_from_input_event};
+use gloo_console::log;
+use shared::{InvoiceCreationResponse, PaymentServices};
+use std::str::FromStr;
+use yew::prelude::*;
 
 mod api;
 mod util;
@@ -31,7 +31,7 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        return Self {
+        Self {
             current_nick: "".to_string(),
             warn_message: None,
             crd_amount: MIN_CRD,
@@ -43,9 +43,9 @@ impl Component for App {
         match msg {
             PaymentMsg::UpdateNick(v) => self.current_nick = v,
             PaymentMsg::UpdateCrd(v) => {
-                if v == "" {
+                if v.is_empty() {
                     self.crd_amount = MIN_CRD
-                } else if let Ok(v) = u32::from_str(&*v){
+                } else if let Ok(v) = u32::from_str(&v) {
                     self.crd_amount = v
                 }
             }
@@ -62,7 +62,7 @@ impl Component for App {
                     is_ok = false;
                 }
 
-                if self.current_nick == "" {
+                if self.current_nick.is_empty() {
                     self.warn_message = Some("Введите имя персонажа!".to_string());
                     is_ok = false;
                 }
@@ -76,19 +76,15 @@ impl Component for App {
 
                     ctx.link().send_future(async move {
                         match BackendApi::create_invoice(name, amount, method).await {
-                            Ok(resp) => {
-                                match resp {
-                                    InvoiceCreationResponse::Ok(v) => {
-                                        PaymentMsg::LinkOk(v)
-                                    }
-                                    InvoiceCreationResponse::WrongNick => {
-                                        PaymentMsg::LinkErr("Неверное имя персонажа!".to_string())
-                                    }
-                                    InvoiceCreationResponse::Err => {
-                                        PaymentMsg::LinkErr("Network error".to_string())
-                                    }
+                            Ok(resp) => match resp {
+                                InvoiceCreationResponse::Ok(v) => PaymentMsg::LinkOk(v),
+                                InvoiceCreationResponse::WrongNick => {
+                                    PaymentMsg::LinkErr("Неверное имя персонажа!".to_string())
                                 }
-                            }
+                                InvoiceCreationResponse::Err => {
+                                    PaymentMsg::LinkErr("Network error".to_string())
+                                }
+                            },
                             Err(e) => {
                                 log!(format!("{e:#?}"));
                                 PaymentMsg::LinkErr("Network error".to_string())
@@ -96,13 +92,11 @@ impl Component for App {
                         }
                     });
                 }
-            },
+            }
             PaymentMsg::LinkOk(url) => {
                 web_sys::window().unwrap().location().replace(&url).unwrap();
             }
-            PaymentMsg::LinkErr(err) => {
-                self.warn_message = Some(err)
-            }
+            PaymentMsg::LinkErr(err) => self.warn_message = Some(err),
         };
 
         true
@@ -124,7 +118,7 @@ impl Component for App {
             on_crd_change.emit(get_value_from_input_event(input_event));
         });
 
-        let r = html!{
+        let r = html! {
             <>
             <div class="sep_b">
             </div>
@@ -133,7 +127,7 @@ impl Component for App {
                     <div class="dlg_hdr">
                     <span class="logo pull-right"></span>
                         <div class="dlg_hdr_txt">
-                        <b>{ "Купить CRD"}</b> 
+                        <b>{ "Купить CRD"}</b>
                         </div>
                         <div class= "dragon"></div>
                     </div>

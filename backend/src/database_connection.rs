@@ -1,13 +1,13 @@
-use std::time::SystemTime;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
+use mongodb::bson::{doc, serde_helpers::uuid_1_as_binary, to_document};
 use mongodb::options::ClientOptions;
 use mongodb::{bson, Client, Database};
-use mongodb::bson::{doc, serde_helpers::uuid_1_as_binary, to_document};
+use serde::Serialize;
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions};
 use sqlx::{Error, MySql, Pool};
-use serde::{Serialize};
+use std::time::SystemTime;
 use uuid::Uuid;
 
 use crate::invoice_handler::{Invoice, InvoiceData};
@@ -20,15 +20,15 @@ pub struct DatabaseConnection {
 }
 
 #[derive(Debug, Serialize)]
-struct MongoIdDoc{
+struct MongoIdDoc {
     #[serde(with = "uuid_1_as_binary")]
     #[serde(rename = "_id")]
     id: Uuid,
 }
 
-pub enum DbResponse<T>{
+pub enum DbResponse<T> {
     Ok(T),
-    Err
+    Err,
 }
 
 impl DatabaseConnection {
@@ -43,27 +43,27 @@ impl DatabaseConnection {
     }
 
     pub async fn get_char_id_by_name(&self, char_name: &str) -> Result<DbResponse<i32>> {
-        let query: Result<(i32,), _> = sqlx::query_as("SELECT obj_id FROM characters WHERE char_name = ?")
-            .bind(char_name)
-            .fetch_one(&self.l2_database)
-            .await;
+        let query: Result<(i32,), _> =
+            sqlx::query_as("SELECT obj_id FROM characters WHERE char_name = ?")
+                .bind(char_name)
+                .fetch_one(&self.l2_database)
+                .await;
 
         match query {
-            Ok(v) => {
-                Ok(DbResponse::Ok(v.0))
-            }
-            Err(e) => {
-                match e {
-                    Error::RowNotFound => {
-                        Ok(DbResponse::Err)
-                    }
-                    _ => Err(anyhow::Error::from(e))
-                }
-            }
+            Ok(v) => Ok(DbResponse::Ok(v.0)),
+            Err(e) => match e {
+                Error::RowNotFound => Ok(DbResponse::Err),
+                _ => Err(anyhow::Error::from(e)),
+            },
         }
     }
 
-    pub async fn add_crd_to_delayed(&self, char_id: i32, char_name: String, count: u32) -> Result<()> {
+    pub async fn add_crd_to_delayed(
+        &self,
+        char_id: i32,
+        char_name: String,
+        count: u32,
+    ) -> Result<()> {
         const CRD_ID: u32 = 26352;
 
         sqlx::query(
@@ -91,7 +91,10 @@ impl DatabaseConnection {
 
     pub async fn get_unfinished_payed_invoices(&self) -> Vec<Invoice> {
         let collection = self.database.collection::<Invoice>("invoice");
-        let res = collection.find(doc! {"data.Payed.stored_in_l2_db": false}, None).await.unwrap();
+        let res = collection
+            .find(doc! {"data.Payed.stored_in_l2_db": false}, None)
+            .await
+            .unwrap();
 
         let res: Vec<Invoice> = res.try_collect().await.unwrap();
 
@@ -101,7 +104,7 @@ impl DatabaseConnection {
     pub async fn get_invoice_by_id(&self, invoice_id: Uuid) -> Option<Invoice> {
         let collection = self.database.collection::<Invoice>("invoice");
 
-        let search = to_document(&MongoIdDoc{id: invoice_id}).unwrap();
+        let search = to_document(&MongoIdDoc { id: invoice_id }).unwrap();
 
         collection.find_one(search, None).await.unwrap()
     }
@@ -109,9 +112,15 @@ impl DatabaseConnection {
     pub async fn update_invoice_data(&self, invoice_id: Uuid, data: InvoiceData) -> Result<()> {
         let collection = self.database.collection::<Invoice>("invoice");
 
-        let search = to_document(&MongoIdDoc{id: invoice_id}).unwrap();
+        let search = to_document(&MongoIdDoc { id: invoice_id }).unwrap();
 
-        collection.update_one(search , doc!{"$set": {"data": bson::to_bson(&data).unwrap()}}, None).await?;
+        collection
+            .update_one(
+                search,
+                doc! {"$set": {"data": bson::to_bson(&data).unwrap()}},
+                None,
+            )
+            .await?;
 
         Ok(())
     }

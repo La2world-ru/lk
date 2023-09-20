@@ -1,11 +1,11 @@
-use std::net::SocketAddr;
-use axum::extract::ConnectInfo;
-use crate::get_db;
-use crate::invoice_handler::{INVOICE_HANDLER};
-use axum::Json;
-use axum::response::{IntoResponse, Response};
-use shared::{CreateInvoice, InvoiceCreationResponse};
 use crate::database_connection::DbResponse;
+use crate::get_db;
+use crate::invoice_handler::INVOICE_HANDLER;
+use axum::extract::ConnectInfo;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
+use shared::{CreateInvoice, InvoiceCreationResponse};
+use std::net::SocketAddr;
 
 pub async fn create_invoice(
     ConnectInfo(client_ip): ConnectInfo<SocketAddr>,
@@ -29,11 +29,7 @@ pub async fn create_invoice(
         )
         .await
     {
-        Ok(v) => {
-            Json(InvoiceCreationResponse::Ok(v)).into_response()
-        },
-        Err(_) => {
-            Json(InvoiceCreationResponse::Err).into_response()
-        },
+        Ok(v) => Json(InvoiceCreationResponse::Ok(v)).into_response(),
+        Err(_) => Json(InvoiceCreationResponse::Err).into_response(),
     }
 }

@@ -4,25 +4,25 @@ mod external_services;
 mod invoice_handler;
 mod tasks;
 
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
+use axum_server::tls_rustls::RustlsConfig;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Deserializer};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use axum::response::IntoResponse;
-use axum_server::tls_rustls::RustlsConfig;
 use tokio::sync::{OnceCell, RwLock};
-use tower_http::services::ServeDir;
 use tower::util::ServiceExt;
+use tower_http::services::ServeDir;
 use uuid::Uuid;
 
-use crate::api::lk_payments::{create_invoice};
+use crate::api::lk_payments::create_invoice;
 use crate::api::webhooks::enot_invoice_webhook;
 use crate::database_connection::DatabaseConnection;
-use crate::tasks::{spawn_tasks};
+use crate::tasks::spawn_tasks;
 
 lazy_static! {
     static ref CONFIG: MainConfig = envy::from_env::<MainConfig>().unwrap();
@@ -59,35 +59,31 @@ struct MainConfig {
     enot_allowed_ips: Vec<IpAddr>,
 }
 
-fn ip_vec_from_str<'de,  D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>
-    where
-        D: Deserializer<'de>,
+fn ip_vec_from_str<'de, D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>
+where
+    D: Deserializer<'de>,
 {
     let binding = String::deserialize(deserializer)?;
-    let binding = binding.replace(" ", "");
+    let binding = binding.replace(' ', "");
 
-    let s: Vec<&str> = binding.split(",").collect();
+    let s: Vec<&str> = binding.split(',').collect();
 
     Ok(s.iter().map(|v| IpAddr::from_str(v).unwrap()).collect())
 }
 
-pub async fn get_db() -> tokio::sync::RwLockReadGuard<'static, DatabaseConnection>
-{
+pub async fn get_db() -> tokio::sync::RwLockReadGuard<'static, DatabaseConnection> {
     DB.get().unwrap().read().await
 }
-pub async fn get_db_mut() -> tokio::sync::RwLockWriteGuard<'static, DatabaseConnection>
-{
+pub async fn get_db_mut() -> tokio::sync::RwLockWriteGuard<'static, DatabaseConnection> {
     DB.get().unwrap().write().await
 }
 
 #[tokio::main]
 async fn main() {
-    DB.set(RwLock::new(DatabaseConnection::new().await)).unwrap();
+    DB.set(RwLock::new(DatabaseConnection::new().await))
+        .unwrap();
 
-    let config = RustlsConfig::from_pem_file(
-        &CONFIG.cert_path,
-        &CONFIG.key_path,
-    )
+    let config = RustlsConfig::from_pem_file(&CONFIG.cert_path, &CONFIG.key_path)
         .await
         .unwrap();
     let addr = SocketAddr::from(([127, 0, 0, 1], 14082));
@@ -96,12 +92,10 @@ async fn main() {
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
         .fallback_service(get(|req: Request<Body>| async move {
-            let res = ServeDir::new(&"./dist").oneshot(req).await.unwrap(); // serve dir is infallible
+            let res = ServeDir::new("./dist").oneshot(req).await.unwrap(); // serve dir is infallible
             let status = res.status();
             match status {
-                StatusCode::NOT_FOUND => {
-                    "404".into_response()
-                }
+                StatusCode::NOT_FOUND => "404".into_response(),
                 _ => res.into_response(),
             }
         }))

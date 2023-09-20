@@ -1,16 +1,16 @@
+use anyhow::Result;
 use async_trait::async_trait;
-use lazy_static::lazy_static;
-use reqwest::{RequestBuilder, Response};
-use serde::{Deserialize, Serialize};
-use std::net::IpAddr;
-use std::time::SystemTime;
 use axum::Json;
 use chrono::{DateTime, Utc};
+use lazy_static::lazy_static;
+use mongodb::bson::serde_helpers::uuid_1_as_binary;
+use reqwest::{RequestBuilder, Response};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use uuid::Uuid;
-use anyhow::Result;
-use mongodb::bson::{serde_helpers::uuid_1_as_binary};
 use shared::PaymentServices;
+use std::net::IpAddr;
+use std::time::SystemTime;
+use uuid::Uuid;
 
 use crate::external_services::enot;
 use crate::external_services::enot::handler::EnotInvoiceHandler;
@@ -23,7 +23,11 @@ lazy_static! {
 #[async_trait]
 pub trait InvoiceOperations {
     fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder;
-    fn parse_invoice_status_update(&self, body: Json<Value>, hash: &str) -> Result<InvoiceStatusUpdate>;
+    fn parse_invoice_status_update(
+        &self,
+        body: Json<Value>,
+        hash: &str,
+    ) -> Result<InvoiceStatusUpdate>;
     async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData;
 }
 
@@ -31,11 +35,8 @@ pub struct InvoiceHandler {
     enot: EnotInvoiceHandler,
 }
 
-pub enum ServiceInvoiceUpdate{
-    Enot {
-        body: Json<Value>,
-        hash: String,
-    }
+pub enum ServiceInvoiceUpdate {
+    Enot { body: Json<Value>, hash: String },
 }
 
 impl InvoiceHandler {
@@ -47,44 +48,47 @@ impl InvoiceHandler {
 
     pub async fn handle_invoice_update(&self, data: ServiceInvoiceUpdate) -> Result<()> {
         match data {
-            ServiceInvoiceUpdate::Enot {
-                body,
-                hash,
-            } => {
+            ServiceInvoiceUpdate::Enot { body, hash } => {
                 let invoice_update = self.enot.parse_invoice_status_update(body, &hash)?;
 
-                let Some(original_invoice) = get_db().await.get_invoice_by_id(invoice_update.order_id).await else {
-                    return Ok(())
+                let Some(original_invoice) = get_db()
+                    .await
+                    .get_invoice_by_id(invoice_update.order_id)
+                    .await
+                else {
+                    return Ok(());
                 };
 
                 let update_res = match original_invoice.data {
-                    InvoiceData::WaitingForPayment {
-                        external_id,
-                        ..
-                    } => {
-
+                    InvoiceData::WaitingForPayment { external_id, .. } => {
                         if external_id != invoice_update.external_id {
                             return Ok(());
                         }
 
                         match invoice_update.data {
                             InvoiceStatusUpdateData::Payed => {
-                                get_db().await.update_invoice_data(
-                                    original_invoice.id,
-                                    InvoiceData::Payed {
-                                        stored_in_l2_db: false,
-                                        external_id
-                                    }
-                                ).await
+                                get_db()
+                                    .await
+                                    .update_invoice_data(
+                                        original_invoice.id,
+                                        InvoiceData::Payed {
+                                            stored_in_l2_db: false,
+                                            external_id,
+                                        },
+                                    )
+                                    .await
                             }
                             InvoiceStatusUpdateData::Aborted { reason } => {
-                                get_db().await.update_invoice_data(
-                                    original_invoice.id,
-                                    InvoiceData::Aborted {
-                                        reason,
-                                        external_id
-                                    }
-                                ).await
+                                get_db()
+                                    .await
+                                    .update_invoice_data(
+                                        original_invoice.id,
+                                        InvoiceData::Aborted {
+                                            reason,
+                                            external_id,
+                                        },
+                                    )
+                                    .await
                             }
                             InvoiceStatusUpdateData::None => {
                                 return Ok(());
@@ -212,8 +216,6 @@ pub struct InvoiceStatusUpdate {
 
 pub enum InvoiceStatusUpdateData {
     None,
-    Aborted {
-        reason: String,
-    },
-    Payed
+    Aborted { reason: String },
+    Payed,
 }

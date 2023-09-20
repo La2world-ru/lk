@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
 
-use std::collections::BTreeMap;
-use std::fmt::Debug;
 use anyhow::Result;
 use axum::Json;
 use chrono::{DateTime, NaiveDateTime, Utc};
+use std::collections::BTreeMap;
+use std::fmt::Debug;
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -186,10 +186,8 @@ struct CreateInvoiceParams {
     exclude_service: Option<Vec<PaymentMethod>>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ResponseWrapper<T>
-{
+pub struct ResponseWrapper<T> {
     data: T,
     status: i32,
     status_check: bool,
@@ -362,7 +360,7 @@ impl RawIncomingInvoice {
     fn from_data(body: Json<Value>, hash: &str) -> Result<Self> {
         let mut raw_body = String::new();
 
-        println!("{}", body.0.to_string());
+        println!("{}", body.0);
 
         let mut c: BTreeMap<String, Value> = BTreeMap::new();
         {
@@ -372,14 +370,14 @@ impl RawIncomingInvoice {
             }
         }
 
-        raw_body.push_str("{");
+        raw_body.push('{');
         for (i, v) in c.iter().enumerate() {
-            raw_body.push_str(&format!(r#""{}":{}"#, v.0, v.1.to_string()));
-            if i < c.len()-1 {
-                raw_body.push_str(",");
+            raw_body.push_str(&format!(r#""{}":{}"#, v.0, v.1));
+            if i < c.len() - 1 {
+                raw_body.push(',');
             }
         }
-        raw_body.push_str("}");
+        raw_body.push('}');
 
         println!("{raw_body}");
 
@@ -736,8 +734,14 @@ struct RejectedRefund {
 }
 
 pub(crate) mod handler {
-    use crate::external_services::enot::{CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate, PaymentCurrency, RawIncomingInvoice, ResponseWrapper};
-    use crate::invoice_handler::{InvoiceData, InvoiceOperations, InvoiceStatusUpdate, InvoiceStatusUpdateData, PaymentServiceCreateInvoiceResponse};
+    use crate::external_services::enot::{
+        CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate, PaymentCurrency,
+        RawIncomingInvoice, ResponseWrapper,
+    };
+    use crate::invoice_handler::{
+        InvoiceData, InvoiceOperations, InvoiceStatusUpdate, InvoiceStatusUpdateData,
+        PaymentServiceCreateInvoiceResponse,
+    };
     use crate::CONFIG;
 
     use anyhow::Result;
@@ -781,50 +785,48 @@ pub(crate) mod handler {
                 .body(serde_json::to_string(&params).unwrap())
         }
 
-        fn parse_invoice_status_update(&self, body: Json<Value>, hash: &str) -> Result<InvoiceStatusUpdate> {
+        fn parse_invoice_status_update(
+            &self,
+            body: Json<Value>,
+            hash: &str,
+        ) -> Result<InvoiceStatusUpdate> {
             let data = RawIncomingInvoice::from_data(body, hash)?.into_invoice_data()?;
 
             match data {
-                InvoiceUpdate::SucceedPayment(v) => {
-                    Ok(InvoiceStatusUpdate {
-                        order_id: v.order_id,
-                        external_id: v.invoice_id.to_string(),
-                        data: InvoiceStatusUpdateData::Payed,
-                    })
-                }
+                InvoiceUpdate::SucceedPayment(v) => Ok(InvoiceStatusUpdate {
+                    order_id: v.order_id,
+                    external_id: v.invoice_id.to_string(),
+                    data: InvoiceStatusUpdateData::Payed,
+                }),
 
-                InvoiceUpdate::RejectedPayment(v) => {
-                    Ok(InvoiceStatusUpdate {
-                        order_id: v.order_id,
-                        external_id: v.invoice_id.to_string(),
-                        data: InvoiceStatusUpdateData::Aborted {
-                            reason: format!("{:#?}", v.close_status)
-                        },
-                    })
-                }
+                InvoiceUpdate::RejectedPayment(v) => Ok(InvoiceStatusUpdate {
+                    order_id: v.order_id,
+                    external_id: v.invoice_id.to_string(),
+                    data: InvoiceStatusUpdateData::Aborted {
+                        reason: format!("{:#?}", v.close_status),
+                    },
+                }),
 
-                InvoiceUpdate::SucceedRefund(v) => {
-                    Ok(InvoiceStatusUpdate {
-                        order_id: v.order_id,
-                        external_id: v.invoice_id.to_string(),
-                        data: InvoiceStatusUpdateData::None,
-                    })
-                }
+                InvoiceUpdate::SucceedRefund(v) => Ok(InvoiceStatusUpdate {
+                    order_id: v.order_id,
+                    external_id: v.invoice_id.to_string(),
+                    data: InvoiceStatusUpdateData::None,
+                }),
 
-                InvoiceUpdate::RejectedRefund(v) => {
-                    Ok(InvoiceStatusUpdate {
-                        order_id: v.order_id,
-                        external_id: v.invoice_id.to_string(),
-                        data: InvoiceStatusUpdateData::None,
-                    })
-                }
+                InvoiceUpdate::RejectedRefund(v) => Ok(InvoiceStatusUpdate {
+                    order_id: v.order_id,
+                    external_id: v.invoice_id.to_string(),
+                    data: InvoiceStatusUpdateData::None,
+                }),
             }
         }
 
         async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
             match response.status() {
                 StatusCode::OK => {
-                    let body = response.json::<ResponseWrapper<CreateInvoiceResponse>>().await;
+                    let body = response
+                        .json::<ResponseWrapper<CreateInvoiceResponse>>()
+                        .await;
 
                     match body {
                         Ok(body) => InvoiceData::WaitingForPayment {
@@ -868,7 +870,6 @@ pub(crate) mod handler {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
