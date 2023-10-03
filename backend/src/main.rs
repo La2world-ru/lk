@@ -20,7 +20,7 @@ use tower_http::services::ServeDir;
 use uuid::Uuid;
 
 use crate::api::lk_payments::create_invoice;
-use crate::api::webhooks::enot_invoice_webhook;
+use crate::api::webhooks::{enot_invoice_webhook, hotskins_invoice_webhook};
 use crate::database_connection::DatabaseConnection;
 use crate::tasks::spawn_tasks;
 
@@ -30,6 +30,7 @@ lazy_static! {
 
 static DB: OnceCell<RwLock<DatabaseConnection>> = OnceCell::const_new();
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct MainConfig {
     #[serde(rename = "l2w_backend_db_path")]
@@ -57,6 +58,12 @@ struct MainConfig {
     #[serde(rename = "l2w_backend_enot_allowed_ips")]
     #[serde(deserialize_with = "ip_vec_from_str")]
     enot_allowed_ips: Vec<IpAddr>,
+    #[serde(rename = "l2w_backend_hotskins_shop_api_url")]
+    hotskins_api_url: String,
+    #[serde(rename = "l2w_backend_hotskins_shop_secret")]
+    hotskins_secret: String,
+    #[serde(rename = "l2w_backend_hotskins_shop_public")]
+    hotskins_public: String,
 }
 
 fn ip_vec_from_str<'de, D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>
@@ -83,13 +90,14 @@ async fn main() {
     DB.set(RwLock::new(DatabaseConnection::new().await))
         .unwrap();
 
-    let config = RustlsConfig::from_pem_file(&CONFIG.cert_path, &CONFIG.key_path)
-        .await
-        .unwrap();
-    let addr = SocketAddr::from(([127, 0, 0, 1], 14082));
+    // let config = RustlsConfig::from_pem_file(&CONFIG.cert_path, &CONFIG.key_path)
+    //     .await
+    //     .unwrap();
+    // let addr = SocketAddr::from(([127, 0, 0, 1], 14082));
 
     let app = Router::new()
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
+        .route("/webhook/hotskins/invoice", post(hotskins_invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
         .fallback_service(get(|req: Request<Body>| async move {
             let res = ServeDir::new("./dist").oneshot(req).await.unwrap(); // serve dir is infallible
@@ -103,13 +111,13 @@ async fn main() {
 
     spawn_tasks();
 
-    axum_server::bind_rustls(addr, config)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .unwrap();
-
-    // axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
+    // axum_server::bind_rustls(addr, config)
     //     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
     //     .await
     //     .unwrap();
+
+    axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+        .await
+        .unwrap();
 }

@@ -1,10 +1,8 @@
 use anyhow::Result;
-use async_trait::async_trait;
 use axum::Json;
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use mongodb::bson::serde_helpers::uuid_1_as_binary;
-use reqwest::{RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::PaymentServices;
@@ -12,99 +10,109 @@ use std::net::IpAddr;
 use std::time::SystemTime;
 use uuid::Uuid;
 
-use crate::external_services::enot;
+use crate::external_services::{enot, hotskins};
 use crate::external_services::enot::handler::EnotInvoiceHandler;
+use crate::external_services::hotskins::handler::HotSkinsInvoiceHandler;
 use crate::get_db;
 
 lazy_static! {
     pub static ref INVOICE_HANDLER: InvoiceHandler = InvoiceHandler::new();
 }
 
-#[async_trait]
-pub trait InvoiceOperations {
-    fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder;
-    fn parse_invoice_status_update(
-        &self,
-        body: Json<Value>,
-        hash: &str,
-    ) -> Result<InvoiceStatusUpdate>;
-    async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData;
-}
-
+#[allow(dead_code)]
 pub struct InvoiceHandler {
     enot: EnotInvoiceHandler,
+    hotskins: HotSkinsInvoiceHandler,
 }
 
 pub enum ServiceInvoiceUpdate {
     Enot { body: Json<Value>, hash: String },
+    Hotskins {data: hotskins::InvoiceUpdate}
 }
 
 impl InvoiceHandler {
     pub fn new() -> Self {
         Self {
             enot: EnotInvoiceHandler {},
+            hotskins: HotSkinsInvoiceHandler {},
         }
     }
 
     pub async fn handle_invoice_update(&self, data: ServiceInvoiceUpdate) -> Result<()> {
-        match data {
+        let invoice_update =  match data {
             ServiceInvoiceUpdate::Enot { body, hash } => {
-                let invoice_update = self.enot.parse_invoice_status_update(body, &hash)?;
+                self.enot.parse_invoice_status_update(body, &hash)?
+            }
+            ServiceInvoiceUpdate::Hotskins { data } => {
+                self.hotskins.parse_invoice_status_update(data)?
+            }
+        };
 
-                let Some(original_invoice) = get_db()
-                    .await
-                    .get_invoice_by_id(invoice_update.order_id)
-                    .await
-                else {
+        let Some(original_invoice) = get_db()
+            .await
+            .get_invoice_by_id(invoice_update.order_id)
+            .await
+            else {
+                return Ok(());
+            };
+
+        let update_res = match original_invoice.data {
+            InvoiceData::WaitingForPayment { external_id, .. } => {
+                if external_id != invoice_update.external_id {
                     return Ok(());
-                };
+                }
 
-                let update_res = match original_invoice.data {
-                    InvoiceData::WaitingForPayment { external_id, .. } => {
-                        if external_id != invoice_update.external_id {
-                            return Ok(());
-                        }
-
-                        match invoice_update.data {
-                            InvoiceStatusUpdateData::Payed => {
-                                get_db()
-                                    .await
-                                    .update_invoice_data(
-                                        original_invoice.id,
-                                        InvoiceData::Payed {
-                                            stored_in_l2_db: false,
-                                            external_id,
-                                        },
-                                    )
-                                    .await
-                            }
-                            InvoiceStatusUpdateData::Aborted { reason } => {
-                                get_db()
-                                    .await
-                                    .update_invoice_data(
-                                        original_invoice.id,
-                                        InvoiceData::Aborted {
-                                            reason,
-                                            external_id,
-                                        },
-                                    )
-                                    .await
-                            }
-                            InvoiceStatusUpdateData::None => {
-                                return Ok(());
-                            }
-                        }
+                match invoice_update.data {
+                    InvoiceStatusUpdateData::Payed => {
+                        get_db()
+                            .await
+                            .update_invoice_data(
+                                original_invoice.id,
+                                InvoiceData::Payed {
+                                    stored_in_l2_db: false,
+                                    external_id,
+                                },
+                            )
+                            .await
                     }
-                    _ => {
+                    InvoiceStatusUpdateData::PayedWithChangedSum {new_amount} => {
+                        get_db()
+                            .await
+                            .update_invoice_data_and_amount(
+                                original_invoice.id,
+                                InvoiceData::Payed {
+                                    stored_in_l2_db: false,
+                                    external_id,
+                                },
+                                new_amount,
+                            )
+                            .await
+                    }
+                    InvoiceStatusUpdateData::Aborted { reason } => {
+                        get_db()
+                            .await
+                            .update_invoice_data(
+                                original_invoice.id,
+                                InvoiceData::Aborted {
+                                    reason,
+                                    external_id,
+                                },
+                            )
+                            .await
+                    }
+                    InvoiceStatusUpdateData::None => {
                         return Ok(());
                     }
-                };
-
-                if let Err(_e) = update_res {
-                    //TODO: mb do something
-                };
+                }
             }
-        }
+            _ => {
+                return Ok(());
+            }
+        };
+
+        if let Err(_e) = update_res {
+            //TODO: mb do something
+        };
 
         Ok(())
     }
@@ -157,6 +165,20 @@ impl InvoiceHandler {
                     },
                 }
             }
+
+            PaymentServices::Hotskins => {
+                Invoice {
+                    id: order_id,
+                    char_id,
+                    char_name,
+                    client_ip,
+                    service: PaymentServices::Enot,
+                    amount,
+                    created_at: DateTime::from(SystemTime::now()),
+                    updated_at: DateTime::from(SystemTime::now()),
+                    data: self.hotskins.create_invoice(order_id),
+                }
+            }
         };
 
         get_db().await.create_invoice(created_invoice.clone()).await;
@@ -171,6 +193,7 @@ impl InvoiceHandler {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PaymentServiceCreateInvoiceResponse {
     Enot(enot::CreateInvoiceResponse),
+    Hotskins,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -218,4 +241,7 @@ pub enum InvoiceStatusUpdateData {
     None,
     Aborted { reason: String },
     Payed,
+    PayedWithChangedSum {
+        new_amount: f32,
+    },
 }

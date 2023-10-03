@@ -63,6 +63,7 @@ impl DatabaseConnection {
         char_id: i32,
         char_name: String,
         count: u32,
+        order_id: Uuid,
     ) -> Result<()> {
         const CRD_ID: u32 = 26352;
 
@@ -73,7 +74,7 @@ impl DatabaseConnection {
             .bind(CRD_ID)
             .bind(count)
             .bind(0)
-            .bind(format!("Payment throw new lk for {char_name}. {:#?}", DateTime::<Utc>::from(SystemTime::now())))
+            .bind(format!("{char_name} : {:#?} : {}", DateTime::<Utc>::from(SystemTime::now()), order_id))
             .execute(&self.l2_database)
             .await?;
 
@@ -118,6 +119,22 @@ impl DatabaseConnection {
             .update_one(
                 search,
                 doc! {"$set": {"data": bson::to_bson(&data).unwrap()}},
+                None,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_invoice_data_and_amount(&self, invoice_id: Uuid, data: InvoiceData, amount: f32) -> Result<()> {
+        let collection = self.database.collection::<Invoice>("invoice");
+
+        let search = to_document(&MongoIdDoc { id: invoice_id }).unwrap();
+
+        collection
+            .update_one(
+                search,
+                doc! {"$set": {"data": bson::to_bson(&data).unwrap(), "amount": amount}},
                 None,
             )
             .await?;

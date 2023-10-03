@@ -33,6 +33,7 @@ async fn give_crd() {
                         invoice.char_id,
                         invoice.char_name.clone(),
                         invoice.amount as u32,
+                        invoice.id,
                     )
                     .await
                     .is_ok()

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub enum PaymentServices {
     Enot,
+    Hotskins
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum InvoiceCreationResponse {

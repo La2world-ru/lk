@@ -3,7 +3,6 @@ use anyhow::Result;
 use gloo_net::http::Request;
 use shared::{CreateInvoice, InvoiceCreationResponse, PaymentServices};
 
-
 const BACKEND_API_URL: &str = "http://pay.la2world.ru/api/v1";
 
 pub struct BackendApi {}

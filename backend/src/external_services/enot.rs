@@ -9,15 +9,13 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use thiserror::Error;
 
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
-
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
 use crate::CONFIG;
+use crate::external_services::validate_signature;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[allow(non_camel_case_types)]
@@ -332,9 +330,6 @@ struct RawIncomingInvoice {
     refund_time: Option<String>,
 }
 
-// Create alias for HMAC-SHA256
-type HmacSha256 = Hmac<Sha256>;
-
 #[derive(Error, Debug)]
 pub enum ProceedInvoiceError {
     #[error("Invalid call type: {0}")]
@@ -381,28 +376,13 @@ impl RawIncomingInvoice {
 
         println!("{raw_body}");
 
-        if Self::validate_signature(hash, &CONFIG.enot_public, &raw_body) {
+        if validate_signature(hash, &CONFIG.enot_public, &raw_body)? {
             let s = serde_json::from_value(body.0).unwrap();
 
             return Ok(s);
         }
 
         Err(ProceedInvoiceError::InvalidSignature.into())
-    }
-
-    fn validate_signature(provided_signature: &str, secret: &str, body: &str) -> bool {
-        let mut mac =
-            HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
-
-        mac.update(body.as_bytes());
-
-        let res = mac.finalize().into_bytes();
-
-        println!("{res:02x}\n{provided_signature}");
-
-        let decoded = hex::decode(provided_signature).expect("Decoding failed");
-
-        res[..] == decoded[..]
     }
 
     pub fn into_invoice_data(self) -> Result<InvoiceUpdate> {
@@ -739,13 +719,12 @@ pub(crate) mod handler {
         RawIncomingInvoice, ResponseWrapper,
     };
     use crate::invoice_handler::{
-        InvoiceData, InvoiceOperations, InvoiceStatusUpdate, InvoiceStatusUpdateData,
+        InvoiceData, InvoiceStatusUpdate, InvoiceStatusUpdateData,
         PaymentServiceCreateInvoiceResponse,
     };
     use crate::CONFIG;
 
     use anyhow::Result;
-    use async_trait::async_trait;
     use axum::Json;
     use reqwest::header::HeaderMap;
     use reqwest::{RequestBuilder, Response, StatusCode};
@@ -754,15 +733,14 @@ pub(crate) mod handler {
 
     pub struct EnotInvoiceHandler {}
 
-    #[async_trait]
-    impl InvoiceOperations for EnotInvoiceHandler {
-        fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder {
+    impl EnotInvoiceHandler {
+        pub fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder {
             let params = CreateInvoiceParams {
                 amount,
                 order_id,
                 currency: Some(PaymentCurrency::RUB),
                 shop_id: CONFIG.enot_shop_id,
-                hook_url: Some("https://pay.la2world.ru/webhook/enot/invoice".to_string()),
+                hook_url: None,
                 custom_fields: None,
                 comment: None,
                 fail_url: None,
@@ -785,7 +763,7 @@ pub(crate) mod handler {
                 .body(serde_json::to_string(&params).unwrap())
         }
 
-        fn parse_invoice_status_update(
+        pub(crate) fn parse_invoice_status_update(
             &self,
             body: Json<Value>,
             hash: &str,
@@ -821,7 +799,7 @@ pub(crate) mod handler {
             }
         }
 
-        async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
+        pub(crate) async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
             match response.status() {
                 StatusCode::OK => {
                     let body = response
@@ -873,7 +851,7 @@ pub(crate) mod handler {
 
 #[cfg(test)]
 mod tests {
-    use crate::external_services::enot::RawIncomingInvoice;
+    use crate::external_services::validate_signature;
 
     #[test]
     fn test_sign_validation() {
@@ -881,6 +859,6 @@ mod tests {
         let secret = "example";
         let sign = "e582b14dd13f8111711e3cb66a982fd7bff28a0ddece8bde14a34a5bb4449136";
 
-        assert!(RawIncomingInvoice::validate_signature(sign, secret, body))
+        assert!(validate_signature(sign, secret, body).unwrap())
     }
 }
