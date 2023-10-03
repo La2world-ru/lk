@@ -44,7 +44,7 @@ impl Component for App {
             PaymentMsg::UpdateNick(v) => self.current_nick = v,
             PaymentMsg::UpdateCrd(v) => {
                 if v.is_empty() {
-                    self.crd_amount = MIN_CRD
+                    self.crd_amount = 0
                 } else if let Ok(v) = u32::from_str(&v) {
                     self.crd_amount = v
                 }
@@ -52,6 +52,8 @@ impl Component for App {
             PaymentMsg::UpdatePaymentMethod(v) => {
                 if v == "enot" {
                     self.payment_method = PaymentServices::Enot;
+                } else if v == "hotskins" {
+                    self.payment_method = PaymentServices::Hotskins;
                 }
             }
             PaymentMsg::TryPayment => {
@@ -141,15 +143,34 @@ impl Component for App {
                         </div>
                     </div>
                     <div class="sep_sm"></div>
-                    <div class="dlg_r_a">
-                        <div class="dlg_r_b2">
-                            { "CRD:" }
-                        </div>
-                        <div class="dlg_r_c">
-                            <input placeholder="Количество CRD" id="crd" name="CRD" class="dlg_r_i2" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
-                        </div>
-                    </div>
-                    <div class="sep_sm"></div>
+                    {
+                        if self.payment_method != PaymentServices::Hotskins {
+                            html!{
+                                <div>
+                                    <div class="dlg_r_a">
+                                        <div class="dlg_r_b2">
+                                            { "CRD:" }
+                                        </div>
+                                        <div class="dlg_r_c">
+                                            <input placeholder="Количество CRD" id="crd" name="CRD" class="dlg_r_i2" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
+                                        </div>
+                                    </div>
+                                    <div class="sep_sm"></div>
+                                </div>
+                            }
+                        } else {
+                            html!{
+                                <div>
+                                    <div class="dlg_r_a">
+                                        <div class="dlg_r_hs">
+                                            { "Сумма зависит от выбраных скинов" }
+                                        </div>
+                                    </div>
+                                    <div class="sep_sm"></div>
+                                </div>
+                            }
+                        }
+                    }
                     <div class="dlg_r_a">
                         <div class="dlg_r_b_b">
                             { "Способ оплаты" }
@@ -157,6 +178,7 @@ impl Component for App {
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
+                                <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hotskins" }</option>
                             </select>
                         </div>
                     </div>
