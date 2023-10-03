@@ -14,8 +14,8 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
-use crate::CONFIG;
 use crate::external_services::validate_signature;
+use crate::CONFIG;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[allow(non_camel_case_types)]
@@ -799,7 +799,10 @@ pub(crate) mod handler {
             }
         }
 
-        pub(crate) async fn proceed_create_invoice_response(&self, response: Response) -> InvoiceData {
+        pub(crate) async fn proceed_create_invoice_response(
+            &self,
+            response: Response,
+        ) -> InvoiceData {
             match response.status() {
                 StatusCode::OK => {
                     let body = response

@@ -10,9 +10,9 @@ use std::net::IpAddr;
 use std::time::SystemTime;
 use uuid::Uuid;
 
-use crate::external_services::{enot, hotskins};
 use crate::external_services::enot::handler::EnotInvoiceHandler;
 use crate::external_services::hotskins::handler::HotSkinsInvoiceHandler;
+use crate::external_services::{enot, hotskins};
 use crate::get_db;
 
 lazy_static! {
@@ -27,7 +27,7 @@ pub struct InvoiceHandler {
 
 pub enum ServiceInvoiceUpdate {
     Enot { body: Json<Value>, hash: String },
-    Hotskins {data: hotskins::InvoiceUpdate}
+    Hotskins { data: hotskins::InvoiceUpdate },
 }
 
 impl InvoiceHandler {
@@ -39,7 +39,7 @@ impl InvoiceHandler {
     }
 
     pub async fn handle_invoice_update(&self, data: ServiceInvoiceUpdate) -> Result<()> {
-        let invoice_update =  match data {
+        let invoice_update = match data {
             ServiceInvoiceUpdate::Enot { body, hash } => {
                 self.enot.parse_invoice_status_update(body, &hash)?
             }
@@ -52,9 +52,9 @@ impl InvoiceHandler {
             .await
             .get_invoice_by_id(invoice_update.order_id)
             .await
-            else {
-                return Ok(());
-            };
+        else {
+            return Ok(());
+        };
 
         let update_res = match original_invoice.data {
             InvoiceData::WaitingForPayment { external_id, .. } => {
@@ -75,7 +75,7 @@ impl InvoiceHandler {
                             )
                             .await
                     }
-                    InvoiceStatusUpdateData::PayedWithChangedSum {new_amount} => {
+                    InvoiceStatusUpdateData::PayedWithChangedSum { new_amount } => {
                         get_db()
                             .await
                             .update_invoice_data_and_amount(
@@ -166,19 +166,17 @@ impl InvoiceHandler {
                 }
             }
 
-            PaymentServices::Hotskins => {
-                Invoice {
-                    id: order_id,
-                    char_id,
-                    char_name,
-                    client_ip,
-                    service: PaymentServices::Enot,
-                    amount,
-                    created_at: DateTime::from(SystemTime::now()),
-                    updated_at: DateTime::from(SystemTime::now()),
-                    data: self.hotskins.create_invoice(order_id),
-                }
-            }
+            PaymentServices::Hotskins => Invoice {
+                id: order_id,
+                char_id,
+                char_name,
+                client_ip,
+                service: PaymentServices::Enot,
+                amount,
+                created_at: DateTime::from(SystemTime::now()),
+                updated_at: DateTime::from(SystemTime::now()),
+                data: self.hotskins.create_invoice(order_id),
+            },
         };
 
         get_db().await.create_invoice(created_invoice.clone()).await;
@@ -241,7 +239,5 @@ pub enum InvoiceStatusUpdateData {
     None,
     Aborted { reason: String },
     Payed,
-    PayedWithChangedSum {
-        new_amount: f32,
-    },
+    PayedWithChangedSum { new_amount: f32 },
 }

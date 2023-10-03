@@ -126,7 +126,12 @@ impl DatabaseConnection {
         Ok(())
     }
 
-    pub async fn update_invoice_data_and_amount(&self, invoice_id: Uuid, data: InvoiceData, amount: f32) -> Result<()> {
+    pub async fn update_invoice_data_and_amount(
+        &self,
+        invoice_id: Uuid,
+        data: InvoiceData,
+        amount: f32,
+    ) -> Result<()> {
         let collection = self.database.collection::<Invoice>("invoice");
 
         let search = to_document(&MongoIdDoc { id: invoice_id }).unwrap();
