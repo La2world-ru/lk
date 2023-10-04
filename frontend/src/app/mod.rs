@@ -52,6 +52,8 @@ impl Component for App {
             PaymentMsg::UpdatePaymentMethod(v) => {
                 if v == "enot" {
                     self.payment_method = PaymentServices::Enot;
+                } else if v == "payp" {
+                    self.payment_method = PaymentServices::Payp;
                 } else if v == "hotskins" {
                     self.payment_method = PaymentServices::Hotskins;
                 }
@@ -178,27 +180,72 @@ impl Component for App {
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
-                                <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hotskins" }</option>
+                                <option value="payp" selected={self.payment_method == PaymentServices::Payp}>{ "Paypalych" }</option>
+                                <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hot Skins" }</option>
                             </select>
                         </div>
                     </div>
                     <div class="sep_sm"></div>
-                    <div class="sep_sm"></div>
                     <div class="dlg_f">
-                        <button class="fill" onclick={ctx.link().callback(|_| PaymentMsg::TryPayment)}>
-                            { "Оплатить" }
-                        </button>
-                    </div>
-                    <div class="sep_sm"></div>
-                    <div class="dlg_f2">
-                        {
-                            if let Some(warn) = &self.warn_message {
-                                html!{<div class="dlg_f2_t">{warn} </div>}
-                            } else {
-                                html!{}
+                    <button class="fill" onclick={ctx.link().callback(|_| PaymentMsg::TryPayment)}>
+                        { "Оплатить" }
+                    </button>
+                </div>
+
+                <div class="dlg_f2">
+                    {
+                        if let Some(warn) = &self.warn_message {
+                            html!{<div class="dlg_f2_t">{warn} </div>}
+                        } else {
+                            html!{}
+                        }
+                    }
+                </div>
+                    {
+                        if self.payment_method == PaymentServices::Enot {
+                            html!{
+                                <div class="paycontent">
+                                <div class="pay_form_text">{"Банковские карты РФ, СНГ / Криптавалюты / Киви / Юмани "}</div>
+                                    <div class="payimg">
+                                        <div class="enot_pay">
+                                        <img src="/img/mir.png" alt="Mir" />
+                                        <img src="/img/visa.png" alt="Mir" />
+                                        <img src="/img/qiwi.png" alt="Mir" />
+                                        <img src="/img/maestro.png" alt="Mir" />
+                                        <img src="/img/master.png" alt="Mir" />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        } else if self.payment_method == PaymentServices::Payp {
+                            html!{
+                                <div class="paycontent">
+                                <div class="pay_form_text">{"Украинские / Зарубежные банкоские карты"}</div>
+                                    <div class="payimg">
+                                        <div class="enot_pay">
+                                        <img src="/img/visa.png" alt="Mir" />
+                                        <img src="/img/maestro.png" alt="Mir" />
+                                        <img src="/img/master.png" alt="Mir" />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        } else {
+                            html!{
+                                <div class="paycontent">
+                                <div class="pay_form_text">{"Скины Steam из Dota 2 / CS"}</div>
+                                    <div class="payimg">
+                                        <div class="enot_pay">
+                                        <img src="/img/pudge.png" alt="Mir" />
+                                        <img src="/img/awp.png" alt="Mir" />
+                                        <img src="/img/pudge2.png" alt="Mir" />
+                                        </div>
+                                    </div>
+                                </div>
                             }
                         }
-                    </div>
+                    }
+                    <div class="sep_sm"></div>
                 </div>
             </div>
             </>

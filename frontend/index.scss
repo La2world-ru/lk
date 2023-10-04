@@ -7,6 +7,7 @@ html,
   --color-secondary-bg: #0E1818;
   --color-font: #adb7aa;
   --color-fonth1: whitesmoke;
+  --color-font2: #568163;
   --color-header-bg: #197d8a;
   --color-warning: red;
   --color-border: #2e3e23;
@@ -59,7 +60,7 @@ body {
   border-radius: 6px;
   box-sizing: border-box; border: 1px solid  var(--color-border);
   box-shadow: 0px 7px 12px 0px rgba(0, 0, 0, 0.5); 
-  position: relative; background-color: var(--color-page-bg); width: 500px; height: 305px; align-items: start;
+  position: relative; background-color: var(--color-page-bg); width: 500px; height: 350px; align-items: start;
 }
 .dlg_hdr {
   border-top-left-radius: 6px;
@@ -81,7 +82,7 @@ body {
   padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
 }
 .dlg_r_hs {
-  padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
+  padding: 8px 0px 0px 15px; font-size: 14px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
 }
 .dlg_r_b_b {
   padding: 7px 0px 0px 11px; font-size: 16px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 125px;
@@ -108,7 +109,7 @@ body {
   padding: 0px 0px 0px 0px;
 }
 .dlg_f2_t {
-  font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 15px 77px 0px;
+  font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 15px 39px 0px;
 }
 
 body {
@@ -144,7 +145,7 @@ select {
   background-color: var(--color-secondary-bg);
   outline: 0;
   border-radius: 4px;
-  width: 160px;
+  width: 193px;
   height: 35px;
   padding: 0px 0px 1px 6px;
   border: 1px solid  var(--color-border)
@@ -175,6 +176,22 @@ button:hover { background: #010d0e; } /* при наведении курсор�
 button:active { background: #162222; } /* при нажатии */
 button:hover { color: var(--color-fonth1); } /* при наведении курсора мышки */
 button:active { color: var(--color-h1-title-text); } /* при нажатии */
+}
+.paycontent {
+  padding:  0px 0px 0px 0px;
+}
+.payimg {
+  position: relative; width: 100%; display: flex; align-content: center; justify-content: center
+}
+.enot_pay {
+  padding: auto; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
+  width: auto;
+  height: 25px;
+  float: center;
+  position: relative;
+}
+.pay_form_text {
+  padding:0px 0px 10px 0px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
 }
 
 /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/ /*mobile*/
