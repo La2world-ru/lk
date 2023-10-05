@@ -253,7 +253,7 @@ button:active { color: var(--color-h1-title-text); } /* при нажатии */
     box-sizing: border-box; border: 1px solid  var(--color-border);
     box-shadow: 0px 7px 12px 0px rgba(0, 0, 0, 0.5);
     position: relative; background-color: var(--color-page-bg);
-    width: 500px; height: 305px; align-items: start;
+    width: 490px; height: 350px; align-items: start;
   }
   .dlg_hdr {
     border-top-left-radius: 6px;
@@ -275,10 +275,10 @@ button:active { color: var(--color-h1-title-text); } /* при нажатии */
     padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
   }
   .dlg_r_hs {
-    padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
+    padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
   }
   .dlg_r_b_b {
-    padding: 7px 0px 0px 11px; font-size: 16px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 125px;
+    padding: 7px 0px 0px 11px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 125px;
   }
   .dlg_r_slct {
     min-width: 15px;
@@ -294,15 +294,15 @@ button:active { color: var(--color-h1-title-text); } /* при нажатии */
     height: 35px; width: 75px; padding: 0px 0px 0px 9px; box-sizing: border-box; border: 1px solid  var(--color-border)
   }
   .dlg_f {
-    align-items: center; display: flex; justify-content: center; height: 20px; width: 100%;
-    padding: 10px 0px 0px 178px;
+    height: 20px; width: 100%;
+    padding: 0px 0px 0px 0px;
   }
   .dlg_f2 {
-    align-items: center; display: flex; justify-content: center; height: 20px; width: 100%;
+    align-items: center; display: flex; justify-content: center; height: 14px; width: 100%;
     padding: 0px 0px 0px 0px;
   }
   .dlg_f2_t {
-    font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 15px 77px 0px;
+    font-size: 15px; color: var(--color-warning); font-weight: 200; display: flex; align-content: center; justify-content: center; padding: 0px 49px 52px 0px;
   }
 
   body {
@@ -363,7 +363,9 @@ button:active { color: var(--color-h1-title-text); } /* при нажатии */
     font-size: 16px;
     border-radius: 4px;
     height: 35px;
-    width:100px;
+    width: 30%;
+    float: right;
+    margin-right: 15px;
   }
   button:hover { background: #010d0e; } /* при наведении курсора мышки */
   button:active { background: #162222; } /* при нажатии */
