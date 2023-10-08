@@ -10,6 +10,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
 
+use axum_server::tls_rustls::RustlsConfig;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Deserializer};
 use std::net::{IpAddr, SocketAddr};
@@ -20,7 +21,9 @@ use tower_http::services::ServeDir;
 use uuid::Uuid;
 
 use crate::api::lk_payments::create_invoice;
-use crate::api::webhooks::{enot_invoice_webhook, hotskins_invoice_webhook};
+use crate::api::webhooks::{
+    enot_invoice_webhook, hotskins_invoice_webhook, paypalich_invoice_webhook,
+};
 use crate::database_connection::DatabaseConnection;
 use crate::tasks::spawn_tasks;
 
@@ -33,12 +36,14 @@ static DB: OnceCell<RwLock<DatabaseConnection>> = OnceCell::const_new();
 #[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct MainConfig {
-    #[serde(rename = "l2w_backend_db_path")]
-    db_path: String,
     #[serde(rename = "l2w_backend_cert_path")]
     cert_path: String,
     #[serde(rename = "l2w_backend_key_path")]
     key_path: String,
+
+    #[serde(rename = "l2w_backend_db_path")]
+    db_path: String,
+
     #[serde(rename = "l2w_backend_l2_db_path")]
     l2_db_path: String,
     #[serde(rename = "l2w_backend_l2_db_login")]
@@ -47,6 +52,7 @@ struct MainConfig {
     l2_db_name: String,
     #[serde(rename = "l2w_backend_l2_db_password")]
     l2_db_password: String,
+
     #[serde(rename = "l2w_backend_enot_public")]
     enot_public: String,
     #[serde(rename = "l2w_backend_enot_secret")]
@@ -58,12 +64,18 @@ struct MainConfig {
     #[serde(rename = "l2w_backend_enot_allowed_ips")]
     #[serde(deserialize_with = "ip_vec_from_str")]
     enot_allowed_ips: Vec<IpAddr>,
+
     #[serde(rename = "l2w_backend_hotskins_shop_api_url")]
     hotskins_api_url: String,
     #[serde(rename = "l2w_backend_hotskins_shop_secret")]
     hotskins_secret: String,
     #[serde(rename = "l2w_backend_hotskins_shop_public")]
     hotskins_public: String,
+
+    #[serde(rename = "l2w_backend_paypalich_shop_id")]
+    paypalich_shop_id: String,
+    #[serde(rename = "l2w_backend_paypalich_bearer")]
+    paypalich_bearer: String,
 }
 
 fn ip_vec_from_str<'de, D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>
@@ -90,14 +102,15 @@ async fn main() {
     DB.set(RwLock::new(DatabaseConnection::new().await))
         .unwrap();
 
-    // let config = RustlsConfig::from_pem_file(&CONFIG.cert_path, &CONFIG.key_path)
-    //     .await
-    //     .unwrap();
-    // let addr = SocketAddr::from(([127, 0, 0, 1], 14082));
+    let config = RustlsConfig::from_pem_file(&CONFIG.cert_path, &CONFIG.key_path)
+        .await
+        .unwrap();
+    let addr = SocketAddr::from(([127, 0, 0, 1], 14082));
 
     let app = Router::new()
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
         .route("/webhook/hotskins/invoice", post(hotskins_invoice_webhook))
+        .route("/webhook/hotskins/invoice", post(paypalich_invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
         .fallback_service(get(|req: Request<Body>| async move {
             let res = ServeDir::new("./dist").oneshot(req).await.unwrap(); // serve dir is infallible
@@ -111,13 +124,13 @@ async fn main() {
 
     spawn_tasks();
 
-    // axum_server::bind_rustls(addr, config)
-    //     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-    //     .await
-    //     .unwrap();
-
-    axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
+    axum_server::bind_rustls(addr, config)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
+
+    // axum::Server::bind(&"127.0.0.1:14082".parse().unwrap())
+    //     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+    //     .await
+    //     .unwrap();
 }

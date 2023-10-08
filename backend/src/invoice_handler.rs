@@ -12,7 +12,8 @@ use uuid::Uuid;
 
 use crate::external_services::enot::handler::EnotInvoiceHandler;
 use crate::external_services::hotskins::handler::HotSkinsInvoiceHandler;
-use crate::external_services::{enot, hotskins};
+use crate::external_services::paypalich::handler::PaypalichInvoiceHandler;
+use crate::external_services::{enot, hotskins, paypalich};
 use crate::get_db;
 
 lazy_static! {
@@ -23,11 +24,13 @@ lazy_static! {
 pub struct InvoiceHandler {
     enot: EnotInvoiceHandler,
     hotskins: HotSkinsInvoiceHandler,
+    paypalich: PaypalichInvoiceHandler,
 }
 
 pub enum ServiceInvoiceUpdate {
     Enot { body: Json<Value>, hash: String },
     Hotskins { data: hotskins::InvoiceUpdate },
+    Paypalich { data: paypalich::InvoiceUpdate },
 }
 
 impl InvoiceHandler {
@@ -35,6 +38,7 @@ impl InvoiceHandler {
         Self {
             enot: EnotInvoiceHandler {},
             hotskins: HotSkinsInvoiceHandler {},
+            paypalich: PaypalichInvoiceHandler {},
         }
     }
 
@@ -45,6 +49,9 @@ impl InvoiceHandler {
             }
             ServiceInvoiceUpdate::Hotskins { data } => {
                 self.hotskins.parse_invoice_status_update(data)?
+            }
+            ServiceInvoiceUpdate::Paypalich { data } => {
+                self.paypalich.parse_invoice_status_update(data)?
             }
         };
 
@@ -177,6 +184,45 @@ impl InvoiceHandler {
                 updated_at: DateTime::from(SystemTime::now()),
                 data: self.hotskins.create_invoice(order_id),
             },
+
+            PaymentServices::Paypalych => {
+                let invoice_request = self.paypalich.create_invoice_request(amount, order_id);
+
+                let resp = invoice_request.send().await;
+
+                match resp {
+                    Ok(res) => {
+                        let invoice_data =
+                            self.paypalich.proceed_create_invoice_response(res).await;
+
+                        Invoice {
+                            id: order_id,
+                            char_id,
+                            char_name,
+                            client_ip,
+                            service: PaymentServices::Paypalych,
+                            amount,
+                            created_at: DateTime::from(SystemTime::now()),
+                            updated_at: DateTime::from(SystemTime::now()),
+                            data: invoice_data,
+                        }
+                    }
+
+                    Err(err) => Invoice {
+                        id: order_id,
+                        char_id,
+                        char_name,
+                        client_ip,
+                        service: PaymentServices::Paypalych,
+                        amount,
+                        created_at: DateTime::from(SystemTime::now()),
+                        updated_at: DateTime::from(SystemTime::now()),
+                        data: InvoiceData::FailedToCreate {
+                            reason: format!("Can't connect to Paypalich servers: {err}"),
+                        },
+                    },
+                }
+            }
         };
 
         get_db().await.create_invoice(created_invoice.clone()).await;
@@ -191,6 +237,7 @@ impl InvoiceHandler {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PaymentServiceCreateInvoiceResponse {
     Enot(enot::CreateInvoiceResponse),
+    Paypalich(paypalich::CreateInvoiceResponse),
     Hotskins,
 }
 

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum PaymentServices {
     Enot,
     Hotskins,
-    Payp
+    Paypalych
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum InvoiceCreationResponse {

@@ -53,7 +53,7 @@ impl Component for App {
                 if v == "enot" {
                     self.payment_method = PaymentServices::Enot;
                 } else if v == "payp" {
-                    self.payment_method = PaymentServices::Payp;
+                    self.payment_method = PaymentServices::Paypalych;
                 } else if v == "hotskins" {
                     self.payment_method = PaymentServices::Hotskins;
                 }
@@ -180,7 +180,7 @@ impl Component for App {
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
-                                <option value="payp" selected={self.payment_method == PaymentServices::Payp}>{ "Paypalych" }</option>
+                                <option value="payp" selected={self.payment_method == PaymentServices::Paypalych}>{ "Paypalych" }</option>
                                 <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hot Skins" }</option>
                             </select>
                         </div>
@@ -217,7 +217,7 @@ impl Component for App {
                                     </div>
                                 </div>
                             }
-                        } else if self.payment_method == PaymentServices::Payp {
+                        } else if self.payment_method == PaymentServices::Paypalych {
                             html!{
                                 <div class="paycontent">
                                 <div class="pay_form_text">{"Украинские / Зарубежные банкоские карты"}</div>

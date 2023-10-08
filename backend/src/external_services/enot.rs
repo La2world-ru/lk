@@ -7,14 +7,13 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::str::FromStr;
-use thiserror::Error;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
-use crate::external_services::validate_signature;
+use crate::external_services::{validate_signature, ProceedInvoiceError};
 use crate::CONFIG;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -328,27 +327,6 @@ struct RawIncomingInvoice {
     2023-03-21 14:00
      */
     refund_time: Option<String>,
-}
-
-#[derive(Error, Debug)]
-pub enum ProceedInvoiceError {
-    #[error("Invalid call type: {0}")]
-    InvalidCallType(i32),
-
-    #[error("Unsupported operation type")]
-    UnsupportedOperation,
-
-    #[error("Invalid signature")]
-    InvalidSignature,
-
-    #[error("Wrong status code: {code:?} for state {state:?}")]
-    WrongStatusCode { code: i32, state: String },
-
-    #[error("Missing field: {field:?} for state {state:?}")]
-    FieldMissing { field: String, state: String },
-
-    #[error("Field {field:?} should have type {field_type:?}")]
-    WrongFieldType { field: String, field_type: String },
 }
 
 impl RawIncomingInvoice {

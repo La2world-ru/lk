@@ -61,21 +61,14 @@ pub(crate) mod handler {
     };
 
     use crate::external_services::hotskins::InvoiceUpdate;
-    use crate::external_services::validate_signature;
+    use crate::external_services::{validate_signature, ProceedInvoiceError};
     use crate::CONFIG;
     use anyhow::Result;
-    use thiserror::Error;
     use uuid::Uuid;
 
     pub struct HotSkinsInvoiceHandler {}
 
     static HOTSKINS_EXTERNAL_ID: &str = "hotskins_krivie_uebani";
-
-    #[derive(Error, Debug)]
-    pub enum ProceedInvoiceError {
-        #[error("Invalid signature")]
-        InvalidSignature,
-    }
 
     impl HotSkinsInvoiceHandler {
         /**

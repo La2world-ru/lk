@@ -5,7 +5,7 @@ use axum::{Form, Json};
 use serde_json::Value;
 use std::net::SocketAddr;
 
-use crate::external_services::hotskins;
+use crate::external_services::{hotskins, paypalich};
 use crate::invoice_handler::{ServiceInvoiceUpdate, INVOICE_HANDLER};
 use crate::CONFIG;
 
@@ -27,6 +27,17 @@ pub async fn enot_invoice_webhook(
             body,
             hash: hash.to_str().unwrap().to_string(),
         })
+        .await
+    else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
+
+    StatusCode::OK.into_response()
+}
+
+pub async fn paypalich_invoice_webhook(Form(data): Form<paypalich::InvoiceUpdate>) -> Response {
+    let Ok(_) = INVOICE_HANDLER
+        .handle_invoice_update(ServiceInvoiceUpdate::Paypalich { data })
         .await
     else {
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
