@@ -29,7 +29,7 @@ pub struct InvoiceUpdate {
         - SteamID пользователя-плательщика, передаваемый со стороны сайта-партнера
     */
     #[serde(rename = "steamid")]
-    steam_id: String,
+    steam_id: Option<String>,
     /**
         – произвольный идентификатор/данные, связанный с операцией пользователя-плательщика. Если партнер не передал данный параметр - то в callback-запросе возвращается пустая строка
     */
@@ -61,7 +61,7 @@ pub(crate) mod handler {
     };
 
     use crate::external_services::hotskins::InvoiceUpdate;
-    use crate::external_services::{validate_signature, ProceedInvoiceError};
+    use crate::external_services::{ProceedInvoiceError, validate_signature_1};
     use crate::CONFIG;
     use anyhow::Result;
     use uuid::Uuid;
@@ -89,18 +89,31 @@ pub(crate) mod handler {
             &self,
             data: InvoiceUpdate,
         ) -> Result<InvoiceStatusUpdate> {
-            if !validate_signature(
-                &data.sign,
-                &CONFIG.hotskins_secret,
-                &format!(
+            let body = if let Some(steam_id) = &data.steam_id {
+                format!(
                     "{}:{}:{}:{}:{}:{}",
                     data.key,
-                    data.steam_id,
+                    steam_id,
                     data.order_id,
                     data.invoice_id,
                     data.amount,
                     data.currency
-                ),
+                )
+            } else {
+                format!(
+                    "{}:{}:{}:{}:{}",
+                    data.key,
+                    data.order_id,
+                    data.invoice_id,
+                    data.amount,
+                    data.currency
+                )
+            };
+
+            if !validate_signature_1(
+                &data.sign,
+                &CONFIG.hotskins_secret,
+                &body,
             )? {
                 return Err(ProceedInvoiceError::InvalidSignature.into());
             }

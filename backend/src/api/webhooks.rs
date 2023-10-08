@@ -36,10 +36,15 @@ pub async fn enot_invoice_webhook(
 }
 
 pub async fn paypalich_invoice_webhook(Form(data): Form<paypalich::InvoiceUpdate>) -> Response {
-    let Ok(_) = INVOICE_HANDLER
+    println!("paypalich {:#?}", data);
+
+    let res = INVOICE_HANDLER
         .handle_invoice_update(ServiceInvoiceUpdate::Paypalich { data })
-        .await
-    else {
+        .await;
+
+    println!("paypalich res {:#?}", res);
+
+    let Ok(_) = res else {
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
     };
 

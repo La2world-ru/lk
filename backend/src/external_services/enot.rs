@@ -13,7 +13,7 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
-use crate::external_services::{validate_signature, ProceedInvoiceError};
+use crate::external_services::{validate_signature_256, ProceedInvoiceError};
 use crate::CONFIG;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -354,7 +354,7 @@ impl RawIncomingInvoice {
 
         println!("{raw_body}");
 
-        if validate_signature(hash, &CONFIG.enot_public, &raw_body)? {
+        if validate_signature_256(hash, &CONFIG.enot_public, &raw_body)? {
             let s = serde_json::from_value(body.0).unwrap();
 
             return Ok(s);
@@ -832,7 +832,7 @@ pub(crate) mod handler {
 
 #[cfg(test)]
 mod tests {
-    use crate::external_services::validate_signature;
+    use crate::external_services::validate_signature_256;
 
     #[test]
     fn test_sign_validation() {
@@ -840,6 +840,6 @@ mod tests {
         let secret = "example";
         let sign = "e582b14dd13f8111711e3cb66a982fd7bff28a0ddece8bde14a34a5bb4449136";
 
-        assert!(validate_signature(sign, secret, body).unwrap())
+        assert!(validate_signature_256(sign, secret, body).unwrap())
     }
 }

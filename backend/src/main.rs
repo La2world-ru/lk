@@ -76,6 +76,8 @@ struct MainConfig {
     paypalich_shop_id: String,
     #[serde(rename = "l2w_backend_paypalich_bearer")]
     paypalich_bearer: String,
+    #[serde(rename = "l2w_backend_paypalich_api_url")]
+    paypalich_api_url: String,
 }
 
 fn ip_vec_from_str<'de, D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>
@@ -110,7 +112,7 @@ async fn main() {
     let app = Router::new()
         .route("/webhook/enot/invoice", post(enot_invoice_webhook))
         .route("/webhook/hotskins/invoice", post(hotskins_invoice_webhook))
-        .route("/webhook/hotskins/invoice", post(paypalich_invoice_webhook))
+        .route("/webhook/paypalich/invoice", post(paypalich_invoice_webhook))
         .route("/api/v1/payments/create", post(create_invoice))
         .fallback_service(get(|req: Request<Body>| async move {
             let res = ServeDir::new("./dist").oneshot(req).await.unwrap(); // serve dir is infallible

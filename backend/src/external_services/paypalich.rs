@@ -286,7 +286,7 @@ pub(crate) mod handler {
             );
 
             client
-                .post(&CONFIG.enot_api_url)
+                .post(&CONFIG.paypalich_api_url)
                 .headers(headers)
                 .body(serde_json::to_string(&params).unwrap())
         }

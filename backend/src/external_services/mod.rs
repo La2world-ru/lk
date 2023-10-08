@@ -3,13 +3,31 @@ pub mod hotskins;
 pub mod paypalich;
 
 use hmac::{Hmac, Mac};
+use sha1::Sha1;
 use sha2::Sha256;
 use thiserror::Error;
 
 type HmacSha256 = Hmac<Sha256>;
-fn validate_signature(provided_signature: &str, secret: &str, body: &str) -> anyhow::Result<bool> {
+type HmacSha1 = Hmac<Sha1>;
+
+fn validate_signature_256(provided_signature: &str, secret: &str, body: &str) -> anyhow::Result<bool> {
     let mut mac =
         HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
+
+    mac.update(body.as_bytes());
+
+    let res = mac.finalize().into_bytes();
+
+    println!("{res:02x}\n{provided_signature}");
+
+    let decoded = hex::decode(provided_signature)?;
+
+    Ok(res[..] == decoded[..])
+}
+
+fn validate_signature_1(provided_signature: &str, secret: &str, body: &str) -> anyhow::Result<bool> {
+    let mut mac =
+        HmacSha1::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
 
     mac.update(body.as_bytes());
 
