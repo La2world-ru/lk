@@ -12,13 +12,14 @@ thiserror = { workspace=true }
 anyhow = { workspace=true }
 serde = { workspace=true }
 serde_json = { workspace=true }
+serde_with = { version = "3" }
+serde_repr = { version = "0.1" }
 uuid = { workspace=true  }
 reqwest = { workspace=true }
 axum = { version = "0.6", features = ["form"]}
 axum-server = { version = "0.5", features = ["tls-rustls"] }
 tower = { version = "0.4" }
 envy = "0.4"
-serde_with = { version = "3" }
 chrono = { version = "0.4", features = ["serde"] }
 hmac = "0.12"
 tower-http = { version = "0.4", features = ["cors", "fs"] }

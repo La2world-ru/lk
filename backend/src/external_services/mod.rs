@@ -3,6 +3,8 @@ pub mod hotskins;
 pub mod paypalich;
 
 use hmac::{Hmac, Mac};
+use serde::{de, Deserialize, Deserializer};
+use serde_json::Value;
 use sha1::Sha1;
 use sha2::Sha256;
 use thiserror::Error;
@@ -10,7 +12,11 @@ use thiserror::Error;
 type HmacSha256 = Hmac<Sha256>;
 type HmacSha1 = Hmac<Sha1>;
 
-fn validate_signature_256(provided_signature: &str, secret: &str, body: &str) -> anyhow::Result<bool> {
+fn validate_signature_256(
+    provided_signature: &str,
+    secret: &str,
+    body: &str,
+) -> anyhow::Result<bool> {
     let mut mac =
         HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
 
@@ -25,7 +31,11 @@ fn validate_signature_256(provided_signature: &str, secret: &str, body: &str) ->
     Ok(res[..] == decoded[..])
 }
 
-fn validate_signature_1(provided_signature: &str, secret: &str, body: &str) -> anyhow::Result<bool> {
+fn validate_signature_1(
+    provided_signature: &str,
+    secret: &str,
+    body: &str,
+) -> anyhow::Result<bool> {
     let mut mac =
         HmacSha1::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
 
@@ -40,6 +50,15 @@ fn validate_signature_1(provided_signature: &str, secret: &str, body: &str) -> a
     Ok(res[..] == decoded[..])
 }
 
+fn boolean<'de, D: Deserializer<'de>>(deserializer: D) -> Result<bool, D::Error> {
+    Ok(match Deserialize::deserialize(deserializer)? {
+        Value::Bool(b) => b,
+        Value::String(s) => s == "true",
+        Value::Number(num) => num.as_i64().ok_or(de::Error::custom("Invalid number"))? != 0,
+        Value::Null => false,
+        _ => return Err(de::Error::custom("Wrong type, expected boolean")),
+    })
+}
 #[derive(Error, Debug)]
 pub enum ProceedInvoiceError {
     #[error("Invalid call type: {0}")]

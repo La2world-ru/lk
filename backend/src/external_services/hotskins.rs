@@ -61,7 +61,7 @@ pub(crate) mod handler {
     };
 
     use crate::external_services::hotskins::InvoiceUpdate;
-    use crate::external_services::{ProceedInvoiceError, validate_signature_1};
+    use crate::external_services::{validate_signature_1, ProceedInvoiceError};
     use crate::CONFIG;
     use anyhow::Result;
     use uuid::Uuid;
@@ -92,29 +92,16 @@ pub(crate) mod handler {
             let body = if let Some(steam_id) = &data.steam_id {
                 format!(
                     "{}:{}:{}:{}:{}:{}",
-                    data.key,
-                    steam_id,
-                    data.order_id,
-                    data.invoice_id,
-                    data.amount,
-                    data.currency
+                    data.key, steam_id, data.order_id, data.invoice_id, data.amount, data.currency
                 )
             } else {
                 format!(
                     "{}:{}:{}:{}:{}",
-                    data.key,
-                    data.order_id,
-                    data.invoice_id,
-                    data.amount,
-                    data.currency
+                    data.key, data.order_id, data.invoice_id, data.amount, data.currency
                 )
             };
 
-            if !validate_signature_1(
-                &data.sign,
-                &CONFIG.hotskins_secret,
-                &body,
-            )? {
+            if !validate_signature_1(&data.sign, &CONFIG.hotskins_secret, &body)? {
                 return Err(ProceedInvoiceError::InvalidSignature.into());
             }
 

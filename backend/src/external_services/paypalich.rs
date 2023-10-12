@@ -4,9 +4,15 @@
 use anyhow::Result;
 use std::fmt::Debug;
 
+use md5::{Digest, Md5};
+
+use crate::external_services::boolean;
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
+
+use crate::CONFIG;
 
 use crate::external_services::ProceedInvoiceError;
 
@@ -95,7 +101,7 @@ enum PaymentType {
     Multi,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug)]
 #[repr(u8)]
 enum CommissionPayer {
     Owner = 0,
@@ -114,6 +120,7 @@ pub struct CreateInvoiceResponse {
     /**
     Флаг успешности запроса
      */
+    #[serde(deserialize_with = "boolean")]
     pub success: bool,
 
     /**
@@ -156,7 +163,7 @@ pub struct InvoiceUpdate {
     Уникальный идентификатор платежа
      */
     #[serde(rename = "TrsId")]
-    invoice_id: f32,
+    invoice_id: String,
 
     /**
     Статус платежа
@@ -179,37 +186,37 @@ pub struct InvoiceUpdate {
     /**
     Метод оплаты
      */
-    #[serde(rename = "account_type")]
+    #[serde(rename = "AccountType")]
     account_type: String,
 
     /**
     Дополнительная информация о методе оплаты
      */
-    #[serde(rename = "account_number")]
+    #[serde(rename = "AccountNumber")]
     account_number: String,
 
     /**
     Сумма, которая зачислена на баланс
      */
-    #[serde(rename = "balance_amount")]
+    #[serde(rename = "BalanceAmount")]
     balance_amount: f32,
 
     /**
     Валюта, в которой было зачисление денежных средств на баланс
      */
     #[serde(rename = "BalanceCurrency")]
-    balance_currency: f32,
+    balance_currency: PaymentCurrency,
 
     /**
     Подпись
      */
-    #[serde(rename = "SignatureValue	")]
+    #[serde(rename = "SignatureValue")]
     signature_value: String,
 
     /**
     Код ошибки
      */
-    #[serde(rename = "error_code")]
+    #[serde(rename = "ErrorCode")]
     error_code: Option<u32>,
 
     /**
@@ -221,9 +228,20 @@ pub struct InvoiceUpdate {
 
 impl InvoiceUpdate {
     pub fn validate_signature(&self) -> Result<(), ProceedInvoiceError> {
-        let sign = ""; //TODO: Implement
+        let mut hasher = Md5::new();
+        hasher.update(format!(
+            "{}:{}:{}",
+            self.amount, self.order_id, CONFIG.paypalich_bearer
+        ));
 
-        if sign == self.signature_value {
+        let hash = hasher.finalize();
+
+        let mut res: Vec<u8> = Vec::new();
+        res.extend_from_slice(&hash[..]);
+        let c = hex::encode(res).to_uppercase();
+        println!("{c}\n{}", self.signature_value);
+
+        if c == self.signature_value {
             Ok(())
         } else {
             Err(ProceedInvoiceError::InvalidSignature)
@@ -262,7 +280,7 @@ pub(crate) mod handler {
             let params = CreateInvoiceParams {
                 amount,
                 order_id,
-                description: None,
+                description: Some("Донат на поддержание сервера la2world".to_string()),
                 payment_type: PaymentType::Normal,
                 shop_id: &CONFIG.paypalich_shop_id,
                 currency_in: Some(PaymentCurrency::RUB),
@@ -313,7 +331,7 @@ pub(crate) mod handler {
                 }),
                 PaymentStatus::FAIL => Ok(InvoiceStatusUpdate {
                     order_id: data.order_id,
-                    external_id: data.invoice_id.to_string(),
+                    external_id: data.invoice_id,
                     data: InvoiceStatusUpdateData::Aborted {
                         reason: format!("{:#?}, {:#?}", data.error_code, data.error_message),
                     },

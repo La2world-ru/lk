@@ -61,7 +61,7 @@ impl Component for App {
             PaymentMsg::TryPayment => {
                 let mut is_ok = true;
 
-                if self.crd_amount < MIN_CRD  && self.payment_method != PaymentServices::Hotskins {
+                if self.crd_amount < MIN_CRD && self.payment_method != PaymentServices::Hotskins {
                     self.warn_message = Some(format!("Минимум {MIN_CRD} CRD!"));
                     is_ok = false;
                 }
@@ -180,7 +180,7 @@ impl Component for App {
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
-                                // <option value="payp" selected={self.payment_method == PaymentServices::Paypalych}>{ "Paypalych" }</option>
+                                <option value="payp" selected={self.payment_method == PaymentServices::Paypalych}>{ "Paypalych" }</option>
                                 <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hot Skins" }</option>
                             </select>
                         </div>
