@@ -11,6 +11,7 @@ use std::time::SystemTime;
 use uuid::Uuid;
 
 use crate::invoice_handler::{Invoice, InvoiceData};
+use crate::votes::VoteOptions;
 use crate::CONFIG;
 
 #[derive(Debug)]
@@ -25,9 +26,14 @@ struct MongoIdDoc {
     #[serde(rename = "_id")]
     id: Uuid,
 }
+#[derive(Debug, Serialize)]
+struct MongoU32IdDoc {
+    #[serde(rename = "_id")]
+    id: u32,
+}
 
 pub enum DbResponse<T> {
-    Ok(T),
+    NotFound(T),
     Err,
 }
 
@@ -50,7 +56,7 @@ impl DatabaseConnection {
                 .await;
 
         match query {
-            Ok(v) => Ok(DbResponse::Ok(v.0)),
+            Ok(v) => Ok(DbResponse::NotFound(v.0)),
             Err(e) => match e {
                 Error::RowNotFound => Ok(DbResponse::Err),
                 _ => Err(anyhow::Error::from(e)),
@@ -85,6 +91,32 @@ impl DatabaseConnection {
         Ok(())
     }
 
+    pub async fn add_vote_to_delayed(
+        &self,
+        char_id: i32,
+        char_name: &str,
+        count: u32,
+        date: &str,
+        service: &str,
+    ) -> Result<()> {
+        const VOTE_ID: u32 = 64;
+
+        sqlx::query(
+            "INSERT INTO items_delayed (owner_id, item_id, count, payment_status, description, time, outer_service) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+            .bind(char_id)
+            .bind(VOTE_ID)
+            .bind(count)
+            .bind(0)
+            .bind(char_name)
+            .bind( date)
+            .bind(service)
+            .execute(&self.l2_database)
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn get_all_invoices(&self) -> Vec<Invoice> {
         let collection = self.database.collection::<Invoice>("invoice");
         let res = collection.find(None, None).await.unwrap();
@@ -104,6 +136,34 @@ impl DatabaseConnection {
         let res: Vec<Invoice> = res.try_collect().await.unwrap();
 
         res
+    }
+
+    pub async fn get_vote_options(&self) -> VoteOptions {
+        let collection = self.database.collection::<VoteOptions>("vote_options");
+        let res = collection.find(doc! {}, None).await.unwrap();
+
+        let res: Vec<VoteOptions> = res.try_collect().await.unwrap();
+
+        if res.is_empty() {
+            let _ = collection.insert_one(VoteOptions::default(), None).await;
+            return VoteOptions::default();
+        }
+
+        *res.get(0).unwrap()
+    }
+
+    pub async fn update_last_mmotop_id(&self, id: u32, last_mmotop_id: u32) -> Result<()> {
+        let collection = self.database.collection::<VoteOptions>("invoice");
+
+        collection
+            .update_one(
+                doc! {"_id": id},
+                doc! {"$set": {"last_mmotop_id": last_mmotop_id}},
+                None,
+            )
+            .await?;
+
+        Ok(())
     }
 
     pub async fn get_invoice_by_id(&self, invoice_id: Uuid) -> Option<Invoice> {

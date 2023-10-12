@@ -3,6 +3,7 @@ mod database_connection;
 mod external_services;
 mod invoice_handler;
 mod tasks;
+mod votes;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -78,6 +79,9 @@ struct MainConfig {
     paypalich_bearer: String,
     #[serde(rename = "l2w_backend_paypalich_api_url")]
     paypalich_api_url: String,
+
+    #[serde(rename = "l2w_backend_mmotop_url")]
+    mmotop_url: String,
 }
 
 fn ip_vec_from_str<'de, D>(deserializer: D) -> Result<Vec<IpAddr>, D::Error>

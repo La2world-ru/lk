@@ -15,7 +15,7 @@ pub async fn create_invoice(
         return Json(InvoiceCreationResponse::Err).into_response();
     };
 
-    let DbResponse::Ok(char_id) = char_id else {
+    let DbResponse::NotFound(char_id) = char_id else {
         return Json(InvoiceCreationResponse::WrongNick).into_response();
     };
 
