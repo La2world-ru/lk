@@ -31,9 +31,10 @@ async fn give_crd() {
                     .await
                     .add_crd_to_delayed(
                         invoice.char_id,
-                        invoice.char_name.clone(),
+                        &invoice.char_name,
                         invoice.amount as u32,
                         invoice.id,
+                        &invoice.service.to_string(),
                     )
                     .await
                     .is_ok()

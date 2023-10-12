@@ -61,20 +61,24 @@ impl DatabaseConnection {
     pub async fn add_crd_to_delayed(
         &self,
         char_id: i32,
-        char_name: String,
+        char_name: &str,
         count: u32,
         order_id: Uuid,
+        service: &str,
     ) -> Result<()> {
         const CRD_ID: u32 = 26352;
 
         sqlx::query(
-            "INSERT INTO items_delayed (owner_id, item_id, count, payment_status, description) VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO items_delayed (owner_id, item_id, count, payment_status, description, time, outer_id, outer_service) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
             .bind(char_id)
             .bind(CRD_ID)
             .bind(count)
             .bind(0)
-            .bind(format!("{char_name} : {:#?} : {}", DateTime::<Utc>::from(SystemTime::now()), order_id))
+            .bind(char_name)
+            .bind( format!("{}", DateTime::<Utc>::from(SystemTime::now()).format("%d/%m/%Y %H:%M")))
+            .bind(order_id.to_string())
+            .bind(service)
             .execute(&self.l2_database)
             .await?;
 

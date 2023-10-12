@@ -248,11 +248,11 @@ pub struct Invoice {
     pub(crate) id: Uuid,
     pub char_name: String,
     pub char_id: i32,
-    pub(crate) data: InvoiceData,
+    pub data: InvoiceData,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     client_ip: IpAddr,
-    service: PaymentServices,
+    pub service: PaymentServices,
     pub amount: f32,
 }
 
