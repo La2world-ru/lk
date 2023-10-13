@@ -10,10 +10,10 @@ use std::net::IpAddr;
 use std::time::SystemTime;
 use uuid::Uuid;
 
-use crate::external_services::enot::handler::EnotInvoiceHandler;
-use crate::external_services::hotskins::handler::HotSkinsInvoiceHandler;
-use crate::external_services::paypalich::handler::PaypalichInvoiceHandler;
-use crate::external_services::{enot, hotskins, paypalich};
+use crate::pay_services::enot::handler::EnotInvoiceHandler;
+use crate::pay_services::hotskins::handler::HotSkinsInvoiceHandler;
+use crate::pay_services::paypalich::handler::PaypalichInvoiceHandler;
+use crate::pay_services::{enot, hotskins, paypalich};
 use crate::get_db;
 
 lazy_static! {

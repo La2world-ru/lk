@@ -6,7 +6,7 @@ use std::fmt::Debug;
 
 use md5::{Digest, Md5};
 
-use crate::external_services::boolean;
+use crate::pay_services::boolean;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::CONFIG;
 
-use crate::external_services::ProceedInvoiceError;
+use crate::pay_services::ProceedInvoiceError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[allow(non_camel_case_types)]
@@ -264,7 +264,7 @@ pub(crate) mod handler {
     };
     use crate::CONFIG;
 
-    use crate::external_services::paypalich::{
+    use crate::pay_services::paypalich::{
         CommissionPayer, CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate,
         PaymentCurrency, PaymentStatus, PaymentType,
     };

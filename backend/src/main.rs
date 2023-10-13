@@ -1,9 +1,9 @@
 mod api;
 mod database_connection;
-mod external_services;
+mod pay_services;
 mod invoice_handler;
 mod tasks;
-mod votes;
+mod vote_services;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};

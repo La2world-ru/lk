@@ -13,7 +13,7 @@ use serde_json::{Map, Value};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
-use crate::external_services::{validate_signature_256, ProceedInvoiceError};
+use crate::pay_services::{validate_signature_256, ProceedInvoiceError};
 use crate::CONFIG;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -692,7 +692,7 @@ struct RejectedRefund {
 }
 
 pub(crate) mod handler {
-    use crate::external_services::enot::{
+    use crate::pay_services::enot::{
         CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate, PaymentCurrency,
         RawIncomingInvoice, ResponseWrapper,
     };
@@ -832,7 +832,7 @@ pub(crate) mod handler {
 
 #[cfg(test)]
 mod tests {
-    use crate::external_services::validate_signature_256;
+    use crate::pay_services::validate_signature_256;
 
     #[test]
     fn test_sign_validation() {

@@ -5,7 +5,7 @@ use axum::{Form, Json};
 use serde_json::Value;
 use std::net::SocketAddr;
 
-use crate::external_services::{hotskins, paypalich};
+use crate::pay_services::{hotskins, paypalich};
 use crate::invoice_handler::{ServiceInvoiceUpdate, INVOICE_HANDLER};
 use crate::CONFIG;
 

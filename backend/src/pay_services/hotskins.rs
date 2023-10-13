@@ -60,8 +60,8 @@ pub(crate) mod handler {
         PaymentServiceCreateInvoiceResponse,
     };
 
-    use crate::external_services::hotskins::InvoiceUpdate;
-    use crate::external_services::{validate_signature_1, ProceedInvoiceError};
+    use crate::pay_services::hotskins::InvoiceUpdate;
+    use crate::pay_services::{validate_signature_1, ProceedInvoiceError};
     use crate::CONFIG;
     use anyhow::Result;
     use uuid::Uuid;

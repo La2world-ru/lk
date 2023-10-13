@@ -11,7 +11,7 @@ use std::time::SystemTime;
 use uuid::Uuid;
 
 use crate::invoice_handler::{Invoice, InvoiceData};
-use crate::votes::VoteOptions;
+use crate::vote_services::VoteOptions;
 use crate::CONFIG;
 
 #[derive(Debug)]
@@ -25,11 +25,6 @@ struct MongoIdDoc {
     #[serde(with = "uuid_1_as_binary")]
     #[serde(rename = "_id")]
     id: Uuid,
-}
-#[derive(Debug, Serialize)]
-struct MongoU32IdDoc {
-    #[serde(rename = "_id")]
-    id: u32,
 }
 
 pub enum DbResponse<T> {
@@ -99,17 +94,17 @@ impl DatabaseConnection {
         date: &str,
         service: &str,
     ) -> Result<()> {
-        const VOTE_ID: u32 = 64;
+        const VOTE_ID: u32 = 4037;
 
         sqlx::query(
-            "INSERT INTO items_delayed (owner_id, item_id, count, payment_status, description, time, outer_service) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO items_delayed (owner_id, item_id, count, payment_status, description, time, outer_service) VALUES (?, ?, ?, ?, ?, ?, ?)"
         )
             .bind(char_id)
             .bind(VOTE_ID)
             .bind(count)
             .bind(0)
-            .bind(char_name)
-            .bind( date)
+            .bind(format!("{char_name} - {date}"))
+            .bind( format!("{}", DateTime::<Utc>::from(SystemTime::now()).format("%d/%m/%Y %H:%M")))
             .bind(service)
             .execute(&self.l2_database)
             .await?;
@@ -153,7 +148,7 @@ impl DatabaseConnection {
     }
 
     pub async fn update_last_mmotop_id(&self, id: u32, last_mmotop_id: u32) -> Result<()> {
-        let collection = self.database.collection::<VoteOptions>("invoice");
+        let collection = self.database.collection::<VoteOptions>("vote_options");
 
         collection
             .update_one(

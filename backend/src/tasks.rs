@@ -1,6 +1,6 @@
 use crate::database_connection::DbResponse;
 use crate::invoice_handler::InvoiceData;
-use crate::votes::mmotop::MmotopScrapper;
+use crate::vote_services::mmotop::MmotopScrapper;
 use crate::{get_db, get_db_mut};
 use std::time::Duration;
 use tokio::time::sleep;
@@ -34,22 +34,26 @@ async fn give_votes() {
 
     for record in records {
         let Ok(char_id) = get_db().await.get_char_id_by_name(&record.name).await else {
+            println!("Err on get char name");
+
             return;
         };
 
         let DbResponse::NotFound(char_id) = char_id else {
-            println!("Wrong name: {}", record.name);
-
             continue;
         };
 
-        if get_db()
+        match get_db()
             .await
             .add_vote_to_delayed(char_id, &record.name, 1, &record.date, "MMOTOP")
             .await
-            .is_ok()
         {
-            changed = true;
+            Ok(_) => {
+                changed = true;
+            }
+            Err(e) => {
+                println!("Err on adding {e:#?}")
+            }
         }
     }
 

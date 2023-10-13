@@ -1,4 +1,4 @@
-use crate::votes::MmotopRecordId;
+use crate::vote_services::MmotopRecordId;
 use crate::CONFIG;
 use std::net::IpAddr;
 use std::str::FromStr;
