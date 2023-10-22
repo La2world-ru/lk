@@ -51,6 +51,22 @@ pub async fn paypalich_invoice_webhook(Form(data): Form<paypalich::InvoiceUpdate
     StatusCode::OK.into_response()
 }
 
+pub async fn paypalich_uk_invoice_webhook(Form(data): Form<paypalich::InvoiceUpdate>) -> Response {
+    println!("paypalich_uk {:#?}", data);
+
+    let res = INVOICE_HANDLER
+        .handle_invoice_update(ServiceInvoiceUpdate::Paypalich { data })
+        .await;
+
+    println!("paypalich_uk res {:#?}", res);
+
+    let Ok(_) = res else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
+
+    StatusCode::OK.into_response()
+}
+
 pub async fn hotskins_invoice_webhook(Form(data): Form<hotskins::InvoiceUpdate>) -> Response {
     let Ok(_) = INVOICE_HANDLER
         .handle_invoice_update(ServiceInvoiceUpdate::Hotskins { data })

@@ -180,7 +180,8 @@ impl Component for App {
                         <div class="dlg_r_slct">
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
-                                <option value="payp" selected={self.payment_method == PaymentServices::Paypalych}>{ "Paypalych" }</option>
+                                <option value="paypalich" selected={self.payment_method == PaymentServices::Paypalych}>{ "Paypalych" }</option>
+                                <option value="paypalich_uk" selected={self.payment_method == PaymentServices::PaypalychUk}>{ "Paypalych Uk" }</option>
                                 <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hot Skins" }</option>
                             </select>
                         </div>
@@ -202,43 +203,56 @@ impl Component for App {
                     }
                 </div>
                     {
-                        if self.payment_method == PaymentServices::Enot {
-                            html!{
+                        match self.payment_method {
+                            PaymentServices::Enot => html!{
                                 <div class="paycontent">
                                 <div class="pay_form_text">{"Банковские карты РФ, СНГ / Криптавалюты / Киви / Юмани "}</div>
                                     <div class="payimg">
                                         <div class="enot_pay">
-                                        <img src="/img/mir.png" alt="Mir" />
-                                        <img src="/img/visa.png" alt="Mir" />
-                                        <img src="/img/qiwi.png" alt="Mir" />
-                                        <img src="/img/maestro.png" alt="Mir" />
-                                        <img src="/img/master.png" alt="Mir" />
+                                            <img src="/img/mir.png" alt="Mir" />
+                                            <img src="/img/visa.png" alt="Mir" />
+                                            <img src="/img/qiwi.png" alt="Mir" />
+                                            <img src="/img/maestro.png" alt="Mir" />
+                                            <img src="/img/master.png" alt="Mir" />
                                         </div>
                                     </div>
                                 </div>
-                            }
-                        } else if self.payment_method == PaymentServices::Paypalych {
-                            html!{
+                            },
+
+                            PaymentServices::Paypalych => html!{
                                 <div class="paycontent">
                                 <div class="pay_form_text">{"Украинские / Зарубежные банкоские карты"}</div>
                                     <div class="payimg">
                                         <div class="enot_pay">
-                                        <img src="/img/visa.png" alt="Mir" />
-                                        <img src="/img/maestro.png" alt="Mir" />
-                                        <img src="/img/master.png" alt="Mir" />
+                                            <img src="/img/visa.png" alt="Mir" />
+                                            <img src="/img/maestro.png" alt="Mir" />
+                                            <img src="/img/master.png" alt="Mir" />
                                         </div>
                                     </div>
                                 </div>
-                            }
-                        } else {
-                            html!{
+                            },
+
+                            PaymentServices::PaypalychUk => html!{
+                                <div class="paycontent">
+                                <div class="pay_form_text">{"Украинские / Зарубежные банкоские карты"}</div>
+                                    <div class="payimg">
+                                        <div class="enot_pay">
+                                            <img src="/img/visa.png" alt="Mir" />
+                                            <img src="/img/maestro.png" alt="Mir" />
+                                            <img src="/img/master.png" alt="Mir" />
+                                        </div>
+                                    </div>
+                                </div>
+                            },
+
+                            PaymentServices::Hotskins => html!{
                                 <div class="paycontent">
                                 <div class="pay_form_text">{"Скины Steam из Dota 2 / CS"}</div>
                                     <div class="payimg">
                                         <div class="enot_pay">
-                                        <img src="/img/pudge.png" alt="Mir" />
-                                        <img src="/img/awp.png" alt="Mir" />
-                                        <img src="/img/pudge2.png" alt="Mir" />
+                                            <img src="/img/pudge.png" alt="Mir" />
+                                            <img src="/img/awp.png" alt="Mir" />
+                                            <img src="/img/pudge2.png" alt="Mir" />
                                         </div>
                                     </div>
                                 </div>

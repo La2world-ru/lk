@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 pub enum PaymentServices {
     Enot,
     Hotskins,
-    Paypalych
+    Paypalych,
+    PaypalychUk,
 }
 
 impl Display for PaymentServices {
@@ -19,6 +20,9 @@ impl Display for PaymentServices {
             }
             PaymentServices::Paypalych => {
                 "Paypalych"
+            }
+            PaymentServices::PaypalychUk => {
+                "Paypalych Uk"
             }
         })
     }

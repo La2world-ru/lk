@@ -273,7 +273,11 @@ pub(crate) mod handler {
     use reqwest::{RequestBuilder, Response, StatusCode};
     use uuid::Uuid;
 
-    pub struct PaypalichInvoiceHandler {}
+    pub struct PaypalichInvoiceHandler {
+        pub api_url: String,
+        pub shop_id: String,
+        pub bearer: String,
+    }
 
     impl PaypalichInvoiceHandler {
         pub fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder {

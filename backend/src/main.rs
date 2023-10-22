@@ -22,9 +22,7 @@ use tower_http::services::ServeDir;
 use uuid::Uuid;
 
 use crate::api::lk_payments::create_invoice;
-use crate::api::webhooks::{
-    enot_invoice_webhook, hotskins_invoice_webhook, paypalich_invoice_webhook,
-};
+use crate::api::webhooks::{enot_invoice_webhook, hotskins_invoice_webhook, paypalich_invoice_webhook, paypalich_uk_invoice_webhook};
 use crate::database_connection::DatabaseConnection;
 use crate::tasks::spawn_tasks;
 
@@ -80,6 +78,13 @@ struct MainConfig {
     #[serde(rename = "l2w_backend_paypalich_api_url")]
     paypalich_api_url: String,
 
+    #[serde(rename = "l2w_backend_paypalich_uk_shop_id")]
+    paypalich_uk_shop_id: String,
+    #[serde(rename = "l2w_backend_paypalich_uk_bearer")]
+    paypalich_uk_bearer: String,
+    #[serde(rename = "l2w_backend_paypalich_uk_api_url")]
+    paypalich_uk_api_url: String,
+
     #[serde(rename = "l2w_backend_mmotop_url")]
     mmotop_url: String,
 }
@@ -119,6 +124,10 @@ async fn main() {
         .route(
             "/webhook/paypalich/invoice",
             post(paypalich_invoice_webhook),
+        )
+        .route(
+            "/webhook/paypalich-uk/invoice",
+            post(paypalich_uk_invoice_webhook),
         )
         .route("/api/v1/payments/create", post(create_invoice))
         .fallback_service(get(|req: Request<Body>| async move {

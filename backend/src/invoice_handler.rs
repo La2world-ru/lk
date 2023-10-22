@@ -14,7 +14,7 @@ use crate::pay_services::enot::handler::EnotInvoiceHandler;
 use crate::pay_services::hotskins::handler::HotSkinsInvoiceHandler;
 use crate::pay_services::paypalich::handler::PaypalichInvoiceHandler;
 use crate::pay_services::{enot, hotskins, paypalich};
-use crate::get_db;
+use crate::{CONFIG, get_db};
 
 lazy_static! {
     pub static ref INVOICE_HANDLER: InvoiceHandler = InvoiceHandler::new();
@@ -24,13 +24,15 @@ lazy_static! {
 pub struct InvoiceHandler {
     enot: EnotInvoiceHandler,
     hotskins: HotSkinsInvoiceHandler,
-    paypalich: PaypalichInvoiceHandler,
+    paypalych: PaypalichInvoiceHandler,
+    paypalych_uk: PaypalichInvoiceHandler,
 }
 
 pub enum ServiceInvoiceUpdate {
     Enot { body: Json<Value>, hash: String },
     Hotskins { data: hotskins::InvoiceUpdate },
     Paypalich { data: paypalich::InvoiceUpdate },
+    PaypalichUk { data: paypalich::InvoiceUpdate },
 }
 
 impl InvoiceHandler {
@@ -38,7 +40,16 @@ impl InvoiceHandler {
         Self {
             enot: EnotInvoiceHandler {},
             hotskins: HotSkinsInvoiceHandler {},
-            paypalich: PaypalichInvoiceHandler {},
+            paypalych: PaypalichInvoiceHandler {
+                api_url: CONFIG.paypalich_api_url.clone(),
+                shop_id: CONFIG.paypalich_shop_id.clone(),
+                bearer: CONFIG.paypalich_bearer.clone(),
+            },
+            paypalych_uk: PaypalichInvoiceHandler {
+                api_url: CONFIG.paypalich_uk_api_url.clone(),
+                shop_id: CONFIG.paypalich_uk_shop_id.clone(),
+                bearer: CONFIG.paypalich_uk_bearer.clone(),
+            },
         }
     }
 
@@ -51,7 +62,10 @@ impl InvoiceHandler {
                 self.hotskins.parse_invoice_status_update(data)?
             }
             ServiceInvoiceUpdate::Paypalich { data } => {
-                self.paypalich.parse_invoice_status_update(data)?
+                self.paypalych.parse_invoice_status_update(data)?
+            }
+            ServiceInvoiceUpdate::PaypalichUk { data } => {
+                self.paypalych_uk.parse_invoice_status_update(data)?
             }
         };
 
@@ -186,14 +200,14 @@ impl InvoiceHandler {
             },
 
             PaymentServices::Paypalych => {
-                let invoice_request = self.paypalich.create_invoice_request(amount, order_id);
+                let invoice_request = self.paypalych.create_invoice_request(amount, order_id);
 
                 let resp = invoice_request.send().await;
 
                 match resp {
                     Ok(res) => {
                         let invoice_data =
-                            self.paypalich.proceed_create_invoice_response(res).await;
+                            self.paypalych.proceed_create_invoice_response(res).await;
 
                         Invoice {
                             id: order_id,
@@ -214,6 +228,45 @@ impl InvoiceHandler {
                         char_name,
                         client_ip,
                         service: PaymentServices::Paypalych,
+                        amount,
+                        created_at: DateTime::from(SystemTime::now()),
+                        updated_at: DateTime::from(SystemTime::now()),
+                        data: InvoiceData::FailedToCreate {
+                            reason: format!("Can't connect to Paypalich servers: {err}"),
+                        },
+                    },
+                }
+            }
+
+            PaymentServices::PaypalychUk => {
+                let invoice_request = self.paypalych_uk.create_invoice_request(amount, order_id);
+
+                let resp = invoice_request.send().await;
+
+                match resp {
+                    Ok(res) => {
+                        let invoice_data =
+                            self.paypalych_uk.proceed_create_invoice_response(res).await;
+
+                        Invoice {
+                            id: order_id,
+                            char_id,
+                            char_name,
+                            client_ip,
+                            service: PaymentServices::PaypalychUk,
+                            amount,
+                            created_at: DateTime::from(SystemTime::now()),
+                            updated_at: DateTime::from(SystemTime::now()),
+                            data: invoice_data,
+                        }
+                    }
+
+                    Err(err) => Invoice {
+                        id: order_id,
+                        char_id,
+                        char_name,
+                        client_ip,
+                        service: PaymentServices::PaypalychUk,
                         amount,
                         created_at: DateTime::from(SystemTime::now()),
                         updated_at: DateTime::from(SystemTime::now()),
