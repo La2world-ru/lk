@@ -52,8 +52,10 @@ impl Component for App {
             PaymentMsg::UpdatePaymentMethod(v) => {
                 if v == "enot" {
                     self.payment_method = PaymentServices::Enot;
-                } else if v == "payp" {
+                } else if v == "paypalich" {
                     self.payment_method = PaymentServices::Paypalych;
+                } else if v == "paypalich_uk" {
+                    self.payment_method = PaymentServices::PaypalychUk;
                 } else if v == "hotskins" {
                     self.payment_method = PaymentServices::Hotskins;
                 }
