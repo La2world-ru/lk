@@ -223,7 +223,7 @@ impl Component for App {
 
                             PaymentServices::Paypalych => html!{
                                 <div class="paycontent">
-                                <div class="pay_form_text">{"Украинские / Зарубежные банкоские карты"}</div>
+                                <div class="pay_form_text">{"Зарубежные банковские карты"}</div>
                                     <div class="payimg">
                                         <div class="enot_pay">
                                             <img src="/img/visa.png" alt="Mir" />
@@ -236,7 +236,7 @@ impl Component for App {
 
                             PaymentServices::PaypalychUk => html!{
                                 <div class="paycontent">
-                                <div class="pay_form_text">{"Украинские / Зарубежные банкоские карты"}</div>
+                                <div class="pay_form_text">{"Украинские банковские карты"}</div>
                                     <div class="payimg">
                                         <div class="enot_pay">
                                             <img src="/img/visa.png" alt="Mir" />
