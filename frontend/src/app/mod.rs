@@ -183,7 +183,7 @@ impl Component for App {
                             <select name="payments" id="payments" onchange={on_payment_provider_input}>
                                 <option value="enot" selected={self.payment_method == PaymentServices::Enot}>{ "Enot" }</option>
                                 <option value="paypalich" selected={self.payment_method == PaymentServices::Paypalych}>{ "Paypalych" }</option>
-                                <option value="paypalich_uk" selected={self.payment_method == PaymentServices::PaypalychUk}>{ "Paypalych Uk" }</option>
+                                <option value="paypalich_uk" selected={self.payment_method == PaymentServices::PaypalychUk}>{ "Paypalych UA" }</option>
                                 <option value="hotskins" selected={self.payment_method == PaymentServices::Hotskins}>{ "Hot Skins" }</option>
                             </select>
                         </div>
