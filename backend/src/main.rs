@@ -1,7 +1,7 @@
 mod api;
 mod database_connection;
-mod pay_services;
 mod invoice_handler;
+mod pay_services;
 mod tasks;
 mod vote_services;
 
@@ -22,7 +22,10 @@ use tower_http::services::ServeDir;
 use uuid::Uuid;
 
 use crate::api::lk_payments::create_invoice;
-use crate::api::webhooks::{enot_invoice_webhook, hotskins_invoice_webhook, paypalich_invoice_webhook, paypalich_uk_invoice_webhook};
+use crate::api::webhooks::{
+    enot_invoice_webhook, hotskins_invoice_webhook, paypalich_invoice_webhook,
+    paypalich_uk_invoice_webhook,
+};
 use crate::database_connection::DatabaseConnection;
 use crate::tasks::spawn_tasks;
 
@@ -126,7 +129,7 @@ async fn main() {
             post(paypalich_invoice_webhook),
         )
         .route(
-            "/webhook/paypalich-uk/invoice",
+            "/webhook/paypalich_uk/invoice",
             post(paypalich_uk_invoice_webhook),
         )
         .route("/api/v1/payments/create", post(create_invoice))

@@ -14,7 +14,7 @@ use crate::pay_services::enot::handler::EnotInvoiceHandler;
 use crate::pay_services::hotskins::handler::HotSkinsInvoiceHandler;
 use crate::pay_services::paypalich::handler::PaypalichInvoiceHandler;
 use crate::pay_services::{enot, hotskins, paypalich};
-use crate::{CONFIG, get_db};
+use crate::{get_db, CONFIG};
 
 lazy_static! {
     pub static ref INVOICE_HANDLER: InvoiceHandler = InvoiceHandler::new();

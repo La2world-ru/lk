@@ -5,8 +5,8 @@ use axum::{Form, Json};
 use serde_json::Value;
 use std::net::SocketAddr;
 
-use crate::pay_services::{hotskins, paypalich};
 use crate::invoice_handler::{ServiceInvoiceUpdate, INVOICE_HANDLER};
+use crate::pay_services::{hotskins, paypalich};
 use crate::CONFIG;
 
 pub async fn enot_invoice_webhook(
@@ -55,7 +55,7 @@ pub async fn paypalich_uk_invoice_webhook(Form(data): Form<paypalich::InvoiceUpd
     println!("paypalich_uk {:#?}", data);
 
     let res = INVOICE_HANDLER
-        .handle_invoice_update(ServiceInvoiceUpdate::Paypalich { data })
+        .handle_invoice_update(ServiceInvoiceUpdate::PaypalichUk { data })
         .await;
 
     println!("paypalich_uk res {:#?}", res);

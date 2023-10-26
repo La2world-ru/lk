@@ -12,8 +12,6 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 use uuid::Uuid;
 
-use crate::CONFIG;
-
 use crate::pay_services::ProceedInvoiceError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -57,7 +55,7 @@ struct CreateInvoiceParams {
     /**
     Уникальный идентификатор магазина, к которому относится платеж. Без этого параметра не будет работать Success URL, Fail URL и Result URL
      */
-    shop_id: &'static String,
+    shop_id: String,
 
     /**
     Валюта, в которой оплачивается счет. Если не передана, то используется валюта магазина. Если shop_id не определен, то используется RUB.
@@ -227,12 +225,9 @@ pub struct InvoiceUpdate {
 }
 
 impl InvoiceUpdate {
-    pub fn validate_signature(&self) -> Result<(), ProceedInvoiceError> {
+    pub fn validate_signature(&self, token: &str) -> Result<(), ProceedInvoiceError> {
         let mut hasher = Md5::new();
-        hasher.update(format!(
-            "{}:{}:{}",
-            self.amount, self.order_id, CONFIG.paypalich_bearer
-        ));
+        hasher.update(format!("{}:{}:{}", self.amount, self.order_id, token));
 
         let hash = hasher.finalize();
 
@@ -262,7 +257,6 @@ pub(crate) mod handler {
         InvoiceData, InvoiceStatusUpdate, InvoiceStatusUpdateData,
         PaymentServiceCreateInvoiceResponse,
     };
-    use crate::CONFIG;
 
     use crate::pay_services::paypalich::{
         CommissionPayer, CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate,
@@ -286,7 +280,7 @@ pub(crate) mod handler {
                 order_id,
                 description: Some("Донат на поддержание сервера la2world".to_string()),
                 payment_type: PaymentType::Normal,
-                shop_id: &CONFIG.paypalich_shop_id,
+                shop_id: self.shop_id.clone(),
                 currency_in: Some(PaymentCurrency::RUB),
                 custom: None,
                 payer_pays_commission: Some(CommissionPayer::Client),
@@ -302,13 +296,11 @@ pub(crate) mod handler {
             headers.insert("Content-Type", "application/json".parse().unwrap());
             headers.insert(
                 "Authorization",
-                format!("Bearer {}", CONFIG.paypalich_bearer)
-                    .parse()
-                    .unwrap(),
+                format!("Bearer {}", self.bearer).parse().unwrap(),
             );
 
             client
-                .post(&CONFIG.paypalich_api_url)
+                .post(&self.api_url)
                 .headers(headers)
                 .body(serde_json::to_string(&params).unwrap())
         }
@@ -317,7 +309,7 @@ pub(crate) mod handler {
             &self,
             data: InvoiceUpdate,
         ) -> Result<InvoiceStatusUpdate> {
-            data.validate_signature()?;
+            data.validate_signature(&self.bearer)?;
 
             match data.status {
                 PaymentStatus::SUCCESS => Ok(InvoiceStatusUpdate {

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use chrono::{Utc};
+use chrono::Utc;
 use futures::TryStreamExt;
 use mongodb::bson::{doc, serde_helpers::uuid_1_as_binary, to_document};
 use mongodb::options::ClientOptions;
@@ -253,5 +253,10 @@ impl DatabaseConnection {
 }
 
 fn get_current_time() -> String {
-    format!("{}", Utc::now().with_timezone(&chrono_tz::Europe::Moscow).format("%d/%m/%Y %H:%M %Z"))
+    format!(
+        "{}",
+        Utc::now()
+            .with_timezone(&chrono_tz::Europe::Moscow)
+            .format("%d/%m/%Y %H:%M %Z")
+    )
 }

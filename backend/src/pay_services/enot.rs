@@ -692,13 +692,13 @@ struct RejectedRefund {
 }
 
 pub(crate) mod handler {
-    use crate::pay_services::enot::{
-        CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate, PaymentCurrency,
-        RawIncomingInvoice, ResponseWrapper,
-    };
     use crate::invoice_handler::{
         InvoiceData, InvoiceStatusUpdate, InvoiceStatusUpdateData,
         PaymentServiceCreateInvoiceResponse,
+    };
+    use crate::pay_services::enot::{
+        CreateInvoiceParams, CreateInvoiceResponse, InvoiceUpdate, PaymentCurrency,
+        RawIncomingInvoice, ResponseWrapper,
     };
     use crate::CONFIG;
 
