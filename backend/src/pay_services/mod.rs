@@ -12,6 +12,7 @@ use thiserror::Error;
 type HmacSha256 = Hmac<Sha256>;
 type HmacSha1 = Hmac<Sha1>;
 
+const USD_RATE: u32 = 90;
 fn validate_signature_256(
     provided_signature: &str,
     secret: &str,

@@ -44,11 +44,13 @@ impl InvoiceHandler {
                 api_url: CONFIG.paypalich_api_url.clone(),
                 shop_id: CONFIG.paypalich_shop_id.clone(),
                 bearer: CONFIG.paypalich_bearer.clone(),
+                is_usd_price: false
             },
             paypalych_uk: PaypalichInvoiceHandler {
                 api_url: CONFIG.paypalich_uk_api_url.clone(),
                 shop_id: CONFIG.paypalich_uk_shop_id.clone(),
                 bearer: CONFIG.paypalich_uk_bearer.clone(),
+                is_usd_price: true
             },
         }
     }
@@ -106,6 +108,19 @@ impl InvoiceHandler {
                                     external_id,
                                 },
                                 new_amount,
+                            )
+                            .await
+                    }
+                    InvoiceStatusUpdateData::PayedWithScaleSum { scale } => {
+                        get_db()
+                            .await
+                            .update_invoice_data_and_amount(
+                                original_invoice.id,
+                                InvoiceData::Payed {
+                                    stored_in_l2_db: false,
+                                    external_id,
+                                },
+                                original_invoice.amount*scale,
                             )
                             .await
                     }
@@ -200,7 +215,7 @@ impl InvoiceHandler {
             },
 
             PaymentServices::Paypalych => {
-                let invoice_request = self.paypalych.create_invoice_request(amount, order_id);
+                let invoice_request = self.paypalych.create_invoice_request(amount, order_id, true);
 
                 let resp = invoice_request.send().await;
 
@@ -239,7 +254,7 @@ impl InvoiceHandler {
             }
 
             PaymentServices::PaypalychUk => {
-                let invoice_request = self.paypalych_uk.create_invoice_request(amount, order_id);
+                let invoice_request = self.paypalych_uk.create_invoice_request(amount, order_id, false);
 
                 let resp = invoice_request.send().await;
 
@@ -271,7 +286,7 @@ impl InvoiceHandler {
                         created_at: DateTime::from(SystemTime::now()),
                         updated_at: DateTime::from(SystemTime::now()),
                         data: InvoiceData::FailedToCreate {
-                            reason: format!("Can't connect to Paypalich servers: {err}"),
+                            reason: format!("Can't connect to PaypalichUK servers: {err}"),
                         },
                     },
                 }
@@ -340,4 +355,6 @@ pub enum InvoiceStatusUpdateData {
     Aborted { reason: String },
     Payed,
     PayedWithChangedSum { new_amount: f32 },
+    //For usd
+    PayedWithScaleSum { scale: f32 },
 }

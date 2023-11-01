@@ -63,6 +63,11 @@ impl Component for App {
             PaymentMsg::TryPayment => {
                 let mut is_ok = true;
 
+                if self.payment_method == PaymentServices::PaypalychUk && self.crd_amount < MIN_CRD {
+                    self.warn_message = Some(format!("Минимум {MIN_CRD} 20$"));
+                    is_ok = false;
+                }
+
                 if self.crd_amount < MIN_CRD && self.payment_method != PaymentServices::Hotskins {
                     self.warn_message = Some(format!("Минимум {MIN_CRD} CRD!"));
                     is_ok = false;
@@ -153,13 +158,13 @@ impl Component for App {
                                 <div>
                                     <div class="dlg_r_a">
                                         <div class="dlg_r_b2">
-                                            { "CRD:" }
+                                            { "USD:" }
                                         </div>
                                         <div class="dlg_r_c">
-                                            <input placeholder="Количество CRD" id="crd" name="CRD" class="dlg_r_i2" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
+                                            <input placeholder="Сумма в USD" id="crd" name="CRD" class="dlg_r_i2" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
                                         </div>
                                         <div class="dlg_r_b22">
-                                        { "= 20$" }
+                                        { format!("= {} CRD", self.crd_amount * 90) }
                                     </div>
                                     </div>
                                     <div class="sep_sm"></div>

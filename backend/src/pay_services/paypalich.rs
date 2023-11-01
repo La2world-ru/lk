@@ -266,22 +266,24 @@ pub(crate) mod handler {
     use reqwest::header::HeaderMap;
     use reqwest::{RequestBuilder, Response, StatusCode};
     use uuid::Uuid;
+    use crate::pay_services::USD_RATE;
 
     pub struct PaypalichInvoiceHandler {
         pub api_url: String,
         pub shop_id: String,
         pub bearer: String,
+        pub is_usd_price: bool,
     }
 
     impl PaypalichInvoiceHandler {
-        pub fn create_invoice_request(&self, amount: f32, order_id: Uuid) -> RequestBuilder {
+        pub fn create_invoice_request(&self, amount: f32, order_id: Uuid, rub: bool) -> RequestBuilder {
             let params = CreateInvoiceParams {
                 amount,
                 order_id,
                 description: Some("Донат на поддержание сервера la2world".to_string()),
                 payment_type: PaymentType::Normal,
                 shop_id: self.shop_id.clone(),
-                currency_in: Some(PaymentCurrency::RUB),
+                currency_in: if rub {Some(PaymentCurrency::RUB)} else {Some(PaymentCurrency::USD)},
                 custom: None,
                 payer_pays_commission: Some(CommissionPayer::Client),
                 name: Some("La2World Donation".to_string()),
@@ -315,14 +317,16 @@ pub(crate) mod handler {
                 PaymentStatus::SUCCESS => Ok(InvoiceStatusUpdate {
                     order_id: data.order_id,
                     external_id: data.invoice_id.to_string(),
-                    data: InvoiceStatusUpdateData::Payed,
+                    data: InvoiceStatusUpdateData::PayedWithScaleSum {
+                        scale: USD_RATE as f32,
+                    },
                 }),
 
                 PaymentStatus::UNDERPAID | PaymentStatus::OVERPAID => Ok(InvoiceStatusUpdate {
                     order_id: data.order_id,
                     external_id: data.invoice_id.to_string(),
                     data: InvoiceStatusUpdateData::PayedWithChangedSum {
-                        new_amount: data.amount,
+                        new_amount: data.amount * USD_RATE as f32,
                     },
                 }),
                 PaymentStatus::FAIL => Ok(InvoiceStatusUpdate {
