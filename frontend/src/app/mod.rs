@@ -148,7 +148,25 @@ impl Component for App {
                     </div>
                     <div class="sep_sm"></div>
                     {
-                        if self.payment_method != PaymentServices::Hotskins {
+                        if self.payment_method == PaymentServices::PaypalychUk {
+                            html!{
+                                <div>
+                                    <div class="dlg_r_a">
+                                        <div class="dlg_r_b2">
+                                            { "CRD:" }
+                                        </div>
+                                        <div class="dlg_r_c">
+                                            <input placeholder="Количество CRD" id="crd" name="CRD" class="dlg_r_i2" oninput={on_crd_input} value={self.crd_amount.to_string()}/>
+                                        </div>
+                                        <div class="dlg_r_b22">
+                                        { "= 20$" }
+                                    </div>
+                                    </div>
+                                    <div class="sep_sm"></div>
+                                </div>
+                            }
+                        } 
+                        else if self.payment_method != PaymentServices::Hotskins {
                             html!{
                                 <div>
                                     <div class="dlg_r_a">
@@ -162,7 +180,8 @@ impl Component for App {
                                     <div class="sep_sm"></div>
                                 </div>
                             }
-                        } else {
+                        }
+                        else {
                             html!{
                                 <div>
                                     <div class="dlg_r_a">
@@ -236,7 +255,7 @@ impl Component for App {
 
                             PaymentServices::PaypalychUk => html!{
                                 <div class="paycontent">
-                                <div class="pay_form_text">{"Украинские банковские карты"}</div>
+                                <div class="pay_form_text">{"Украинские банковские карты не меньше 20 $ за пополнение"}</div>
                                     <div class="payimg">
                                         <div class="enot_pay">
                                             <img src="/img/visa.png" alt="Mir" />

@@ -81,6 +81,9 @@ body {
 .dlg_r_b2 {
   padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
 }
+.dlg_r_b22 {
+  padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
+}
 .dlg_r_hs {
   padding: 8px 0px 0px 15px; font-size: 14px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
 }
@@ -273,6 +276,9 @@ button:active { color: var(--color-h1-title-text); } /* при нажатии */
   }
   .dlg_r_b2 {
     padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-fonth1); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
+  }
+  .dlg_r_b22 {
+    padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px; width: 40px;
   }
   .dlg_r_hs {
     padding: 8px 0px 0px 15px; font-size: 15px; color: var(--color-font); font-weight: 200; display: flex; align-content: center; justify-content: center; line-height: 20px;
