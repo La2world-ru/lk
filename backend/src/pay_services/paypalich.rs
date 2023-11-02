@@ -317,16 +317,18 @@ pub(crate) mod handler {
                 PaymentStatus::SUCCESS => Ok(InvoiceStatusUpdate {
                     order_id: data.order_id,
                     external_id: data.invoice_id.to_string(),
-                    data: InvoiceStatusUpdateData::PayedWithScaleSum {
-                        scale: USD_RATE as f32,
-                    },
+                    data: if self.is_usd_price {
+                        InvoiceStatusUpdateData::PayedWithScaleSum {
+                            scale: USD_RATE as f32
+                        }
+                    } else { InvoiceStatusUpdateData::Payed },
                 }),
 
                 PaymentStatus::UNDERPAID | PaymentStatus::OVERPAID => Ok(InvoiceStatusUpdate {
                     order_id: data.order_id,
                     external_id: data.invoice_id.to_string(),
                     data: InvoiceStatusUpdateData::PayedWithChangedSum {
-                        new_amount: data.amount * USD_RATE as f32,
+                        new_amount: data.amount,
                     },
                 }),
                 PaymentStatus::FAIL => Ok(InvoiceStatusUpdate {
