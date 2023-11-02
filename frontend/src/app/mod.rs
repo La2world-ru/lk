@@ -63,13 +63,13 @@ impl Component for App {
             PaymentMsg::TryPayment => {
                 let mut is_ok = true;
 
-                if self.crd_amount < MIN_CRD && self.payment_method != PaymentServices::Hotskins {
-                    self.warn_message = Some(format!("Минимум {MIN_CRD} CRD!"));
+                if self.crd_amount < MIN_CRD && self.payment_method == PaymentServices::PaypalychUk {
+                    self.warn_message = Some(format!("Минимум {MIN_CRD} $"));
                     is_ok = false;
                 }
 
-                if self.crd_amount < MIN_CRD && self.payment_method == PaymentServices::PaypalychUk {
-                    self.warn_message = Some(format!("Минимум {MIN_CRD} $"));
+                if self.crd_amount < MIN_CRD && self.payment_method != PaymentServices::Hotskins {
+                    self.warn_message = Some(format!("Минимум {MIN_CRD} CRD!"));
                     is_ok = false;
                 }
 
