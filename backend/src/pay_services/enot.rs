@@ -95,6 +95,9 @@ enum PaymentMethod {
     /**Bitcoin Cash*/
     #[serde(rename = "bitcoin_cash")]
     BitcoinCash,
+    /**P2P market*/
+    #[serde(rename = "p2p_card")]
+    P2PCard,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -383,13 +386,7 @@ impl RawIncomingInvoice {
                     }
                     .into());
                 };
-                let Some(payer_details) = self.payer_details else {
-                    return Err(ProceedInvoiceError::FieldMissing {
-                        field: "payer_details".to_string(),
-                        state,
-                    }
-                    .into());
-                };
+                let payer_details= self.payer_details.unwrap_or("".to_string());
                 let Some(credited) = self.credited else {
                     return Err(ProceedInvoiceError::FieldMissing {
                         field: "credited".to_string(),
@@ -746,7 +743,13 @@ pub(crate) mod handler {
             body: Json<Value>,
             hash: &str,
         ) -> Result<InvoiceStatusUpdate> {
-            let data = RawIncomingInvoice::from_data(body, hash)?.into_invoice_data()?;
+            let data = RawIncomingInvoice::from_data(body, hash)?.into_invoice_data();
+
+            if data.is_err() {
+                println!("{data:?}");
+            }
+
+            let data = data?;
 
             match data {
                 InvoiceUpdate::SucceedPayment(v) => Ok(InvoiceStatusUpdate {
