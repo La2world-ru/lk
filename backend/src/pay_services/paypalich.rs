@@ -225,9 +225,15 @@ pub struct InvoiceUpdate {
 }
 
 impl InvoiceUpdate {
-    pub fn validate_signature(&self, token: &str) -> Result<(), ProceedInvoiceError> {
+    pub fn validate_signature(&self, token: &str, two_digits: bool) -> Result<(), ProceedInvoiceError> {
         let mut hasher = Md5::new();
-        hasher.update(format!("{}:{}:{}", self.amount, self.order_id, token));
+        hasher.update(
+            if two_digits {
+                format!("{:.2}:{}:{}", self.amount, self.order_id, token)
+            } else {
+                format!("{}:{}:{}", self.amount, self.order_id, token)
+            }
+        );
 
         let hash = hasher.finalize();
 
@@ -239,7 +245,7 @@ impl InvoiceUpdate {
         if c == self.signature_value {
             Ok(())
         } else {
-            Err(ProceedInvoiceError::InvalidSignature)
+            self.validate_signature(token, false)
         }
     }
 }
@@ -311,7 +317,7 @@ pub(crate) mod handler {
             &self,
             data: InvoiceUpdate,
         ) -> Result<InvoiceStatusUpdate> {
-            data.validate_signature(&self.bearer)?;
+            data.validate_signature(&self.bearer, true)?;
 
             match data.status {
                 PaymentStatus::SUCCESS => Ok(InvoiceStatusUpdate {
@@ -384,10 +390,21 @@ pub(crate) mod handler {
 
 #[cfg(test)]
 mod tests {
+    use md5::{Digest, Md5};
+
     #[test]
     fn test_sign_validation() {
         let _body = r#"{"amount":"100.00","credited":"95.50","custom_fields":{"user":1},"invoice_id":"a3e9ff6f-c5c1-3bcd-854e-4bc995b1ae7a","order_id":"c78d8fe9-ab44-3f21-a37a-ce4ca269cb47","pay_service":"card","pay_time":"2023-04-06 16:27:59","payer_details":"553691******1279","status":"success","type":1}"#;
         let _secret = "example";
         let _sign = "e582b14dd13f8111711e3cb66a982fd7bff28a0ddece8bde14a34a5bb4449136";
+        let mut hasher = Md5::new();
+        hasher.update(format!("{:.2}:{}:{}", 2200.0, "22541dbf-a0be-455c-811b-41f590e61b01", "21979|ku3Vnviyq5WQiHqi52Y6HYiLCaUStcGUyAqwyncw"));
+
+        let hash = hasher.finalize();
+
+        let mut res: Vec<u8> = Vec::new();
+        res.extend_from_slice(&hash[..]);
+        let c = hex::encode(res).to_uppercase();
+        println!("{c}");
     }
 }
