@@ -10,7 +10,7 @@ shared = { path = "../shared" }
 yew = { workspace=true }
 anyhow = { workspace=true }
 serde_json = { workspace=true }
-gloo-net = "0.4"
+gloo-net = "0.6.0"
 gloo-console = "0.3"
 web-sys = { version = "0.3", features = ["Event","EventTarget","InputEvent", "HtmlSelectElement"] }
 wasm-bindgen = {version = "0.2" }

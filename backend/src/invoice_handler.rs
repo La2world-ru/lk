@@ -218,7 +218,6 @@ impl InvoiceHandler {
                 let invoice_request = self.paypalych.create_invoice_request(amount, order_id, true);
 
                 let resp = invoice_request.send().await;
-
                 match resp {
                     Ok(res) => {
                         let invoice_data =
